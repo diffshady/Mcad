@@ -18,7 +18,7 @@ router.get('/', protect, async (req, res) => {
     const appointments = await Appointment.find(filter)
       .populate('requestedBy', 'name role barangay')
       .populate('reviewedBy', 'name')
-      .sort({ appointmentDate: 1 });
+      .sort({ appointmentNumber: 1, appointmentDate: 1 });
 
     res.json(appointments);
   } catch (err) {

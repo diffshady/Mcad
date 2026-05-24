@@ -23,6 +23,13 @@ const statusIcon = (s) =>
 
 const formatTicketNumber = (appt, fallback) => appt?.ticketNumber || `ticket-${String(appt?.appointmentNumber ?? fallback).padStart(5, '0')}`;
 
+const ticketRank = (appt, indexFallback = 999999) => {
+  if (Number.isFinite(appt?.appointmentNumber)) return appt.appointmentNumber;
+  const match = (appt?.ticketNumber || '').match(/(\d+)$/);
+  if (match) return Number(match[1]);
+  return indexFallback;
+};
+
 const emptyForm = {
   title: '', description: '', appointmentDate: '',
   venue: '', appointedWith: '', purpose: 'other',
@@ -157,7 +164,7 @@ export default function Appointments() {
   const displayed = items.filter((a) => {
     if (activeTab === 'mine') return a.requestedBy?._id === user._id || a.requestedBy === user._id;
     return true;
-  });
+  }).sort((a, b) => ticketRank(a) - ticketRank(b));
 
   const pendingCount = items.filter((a) => a.status === 'pending').length;
 

@@ -2,10 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
+const User = require('./models/User');
 
 dotenv.config();
-connectDB();
-
 const app = express();
 
 const allowedOrigins = (process.env.CLIENT_URLS || process.env.CLIENT_URL || 'http://localhost:5173')
@@ -40,4 +39,43 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`MCAD server running on port ${PORT}`));
+
+const bootstrapAdminFromEnv = async () => {
+  const email = process.env.SEED_ADMIN_EMAIL;
+  const password = process.env.SEED_ADMIN_PASSWORD;
+  const name = process.env.SEED_ADMIN_NAME || 'System Administrator';
+
+  if (!email || !password) return;
+
+  const existing = await User.findOne({ email });
+  if (existing) {
+    existing.name = name;
+    existing.role = 'admin';
+    existing.status = 'active';
+    existing.password = password;
+    await existing.save();
+    console.log(`Admin bootstrap updated: ${email}`);
+    return;
+  }
+
+  await User.create({
+    name,
+    email,
+    password,
+    role: 'admin',
+    status: 'active',
+    barangay: 'MCAD',
+  });
+  console.log(`Admin bootstrap created: ${email}`);
+};
+
+const startServer = async () => {
+  await connectDB();
+  await bootstrapAdminFromEnv();
+  app.listen(PORT, () => console.log(`MCAD server running on port ${PORT}`));
+};
+
+startServer().catch((err) => {
+  console.error(`Server startup error: ${err.message}`);
+  process.exit(1);
+});

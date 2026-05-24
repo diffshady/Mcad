@@ -31,6 +31,13 @@ router.post(
       const existing = await User.findOne({ email });
       if (existing) return res.status(400).json({ message: 'Email already registered' });
 
+      if (phone) {
+        const existingPhone = await User.findOne({ phone });
+        if (existingPhone) {
+          return res.status(400).json({ message: 'Phone number already registered' });
+        }
+      }
+
       const duplicateName = await User.findOne({ name: { $regex: new RegExp(`^${name.trim()}$`, 'i') } });
       if (duplicateName) return res.status(400).json({ message: 'An account with this name already exists. Please use your full name or contact the administrator.' });
 

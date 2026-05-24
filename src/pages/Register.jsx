@@ -67,6 +67,8 @@ export default function Register() {
       const validationErrors = err.response?.data?.errors;
       if (validationErrors?.length) {
         setError(validationErrors.map((e) => e.msg).join(' • '));
+      } else if (msg.toLowerCase().includes('phone number already')) {
+        setError('This phone number is already registered. Please use a different number.');
       } else if (msg.toLowerCase().includes('name already exists')) {
         setError('An account with this name already exists. Please use your full name or contact the administrator.');
       } else if (msg.toLowerCase().includes('email already') || msg.toLowerCase().includes('duplicate') || msg.toLowerCase().includes('e11000')) {

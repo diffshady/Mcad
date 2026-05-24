@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Appointment = require('../models/Appointment');
+const Counter = require('../models/Counter');
 const { protect, authorize } = require('../middleware/auth');
 
 // GET /api/appointments
@@ -29,12 +30,16 @@ router.get('/', protect, async (req, res) => {
 // GET /api/appointments/next-ticket
 router.get('/next-ticket', protect, async (req, res) => {
   try {
-    const last = await Appointment.findOne({ appointmentNumber: { $exists: true } })
-      .sort({ appointmentNumber: -1 })
-      .select('appointmentNumber')
-      .lean();
+    const [last, counter] = await Promise.all([
+      Appointment.findOne({ appointmentNumber: { $exists: true } })
+        .sort({ appointmentNumber: -1 })
+        .select('appointmentNumber')
+        .lean(),
+      Counter.findById('appointmentNumber').select('seq').lean(),
+    ]);
 
-    const nextNumber = (last?.appointmentNumber || 0) + 1;
+    const currentMax = Math.max(last?.appointmentNumber || 0, counter?.seq || 0);
+    const nextNumber = currentMax + 1;
     const ticketNumber = `ticket-${String(nextNumber).padStart(5, '0')}`;
 
     res.json({ appointmentNumber: nextNumber, ticketNumber });
@@ -106,7 +111,12 @@ router.put('/:id', protect, async (req, res) => {
       return res.status(400).json({ message: 'Cannot edit an appointment that is no longer pending' });
     }
 
-    const updated = await Appointment.findByIdAndUpdate(req.params.id, req.body, {
+    const payload = { ...req.body };
+    delete payload.appointmentNumber;
+    delete payload.ticketNumber;
+    delete payload.requestedBy;
+
+    const updated = await Appointment.findByIdAndUpdate(req.params.id, payload, {
       new: true,
       runValidators: true,
     }).populate('requestedBy', 'name role barangay');

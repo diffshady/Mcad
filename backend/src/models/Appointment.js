@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const Counter = require('./Counter');
 
 const appointmentSchema = new mongoose.Schema(
   {
@@ -37,7 +38,14 @@ appointmentSchema.pre('validate', async function (next) {
       .select('appointmentNumber')
       .lean();
 
-    this.appointmentNumber = (last?.appointmentNumber || 0) + 1;
+    const maxExisting = last?.appointmentNumber || 0;
+    const counter = await Counter.findOneAndUpdate(
+      { _id: 'appointmentNumber' },
+      { $setOnInsert: { seq: maxExisting }, $inc: { seq: 1 } },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    );
+
+    this.appointmentNumber = counter.seq;
   }
 
   if (!this.ticketNumber && this.appointmentNumber) {

@@ -10,8 +10,7 @@ export default async function handler(req, res) {
   }
 
   const rawPath = req.query.path;
-  const pathSegments = Array.isArray(rawPath) ? rawPath : rawPath ? [rawPath] : [];
-  const pathPart = pathSegments.join('/');
+  const pathPart = Array.isArray(rawPath) ? rawPath.join('/') : (rawPath || '');
 
   const backendRoot = /\/api$/i.test(apiBaseUrl) ? apiBaseUrl : `${apiBaseUrl}/api`;
   const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';

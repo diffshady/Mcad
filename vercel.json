@@ -9,7 +9,7 @@
       }
     },
     {
-      "src": "api/[...path].js",
+      "src": "api/proxy.js",
       "use": "@vercel/node"
     }
   ],
@@ -18,8 +18,12 @@
       "handle": "filesystem"
     },
     {
+      "src": "/api/proxy",
+      "dest": "/api/proxy.js"
+    },
+    {
       "src": "/api/(.*)",
-      "dest": "/api/[...path].js?path=$1"
+      "dest": "/api/proxy.js?path=$1"
     },
     {
       "src": "/(.*)",

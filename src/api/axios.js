@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || '/api';
+const normalize = (value = '') => value.replace(/\/+$/, '');
+const withApiSuffix = (value = '') => (/\/api$/i.test(value) ? value : `${value}/api`);
+
+const envBase = normalize(import.meta.env.VITE_API_BASE_URL || '');
+const baseURL = envBase ? withApiSuffix(envBase) : '/api';
 
 const api = axios.create({
   baseURL,

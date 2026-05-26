@@ -41,7 +41,10 @@ appointmentSchema.pre('validate', async function (next) {
     const maxExisting = last?.appointmentNumber || 0;
     await Counter.updateOne(
       { _id: 'appointmentNumber' },
-      { $setOnInsert: { seq: maxExisting } },
+      {
+        $setOnInsert: { seq: maxExisting },
+        $max: { seq: maxExisting },
+      },
       { upsert: true }
     );
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import BrandLogo from '../components/BrandLogo';
@@ -8,11 +8,22 @@ import AppIcon from '../components/AppIcon';
 export default function Login() {
   const { login, logout } = useAuth();
   const navigate = useNavigate();
-  const [portal, setPortal] = useState(null); // null | admin | viewer
+  const [searchParams, setSearchParams] = useSearchParams();
+  const portalParam = searchParams.get('portal');
+  const portal = portalParam === 'admin' || portalParam === 'viewer' ? portalParam : null;
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState(null); // { type, message }
   const [now, setNow] = useState(() => new Date());
+
+  const setPortal = (nextPortal) => {
+    if (!nextPortal) {
+      setSearchParams({});
+      return;
+    }
+
+    setSearchParams({ portal: nextPortal });
+  };
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000);

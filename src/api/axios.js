@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const baseURL = '/api';
+const normalize = (value = '') => value.replace(/\/+$/, '');
+const withApiSuffix = (value = '') => (/\/api$/i.test(value) ? value : `${value}/api`);
+
+const envBase = normalize(import.meta.env.VITE_API_BASE_URL || '');
+const baseURL = envBase ? withApiSuffix(envBase) : '/api';
 
 const api = axios.create({
   baseURL,
@@ -8,7 +12,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  // Normalize request paths so baseURL '/api' yields '/api/<endpoint>' exactly once.
+  // Normalize request paths so baseURL yields '/api/<endpoint>' exactly once.
   if (typeof config.url === 'string') {
     if (config.url.startsWith('/api/')) {
       config.url = config.url.slice('/api/'.length);

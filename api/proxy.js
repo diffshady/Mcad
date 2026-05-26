@@ -1,11 +1,11 @@
 const normalizeBaseUrl = (value = '') => value.replace(/\/+$/, '');
 
 export default async function handler(req, res) {
-  const apiBaseUrl = normalizeBaseUrl(process.env.API_BASE_URL || '');
+  const apiBaseUrl = normalizeBaseUrl(process.env.API_BASE_URL || process.env.VITE_API_BASE_URL || '');
 
   if (!apiBaseUrl) {
     return res.status(500).json({
-      message: 'API proxy is not configured. Set API_BASE_URL in Vercel project environment variables.',
+      message: 'API proxy is not configured. Set API_BASE_URL or VITE_API_BASE_URL in Vercel project environment variables.',
     });
   }
 

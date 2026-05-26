@@ -2,9 +2,13 @@ import axios from 'axios';
 
 const normalize = (value = '') => value.replace(/\/+$/, '');
 const withApiSuffix = (value = '') => (/\/api$/i.test(value) ? value : `${value}/api`);
+const isVercelHosted = () => {
+  if (typeof window === 'undefined') return false;
+  return window.location.hostname.endsWith('.vercel.app');
+};
 
 const envBase = normalize(import.meta.env.VITE_API_BASE_URL || '');
-const baseURL = envBase ? withApiSuffix(envBase) : '/api';
+const baseURL = isVercelHosted() ? '/api' : (envBase ? withApiSuffix(envBase) : '/api');
 
 const api = axios.create({
   baseURL,

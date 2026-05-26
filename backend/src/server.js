@@ -25,6 +25,10 @@ app.use(cors({
 app.use(express.json({ limit: '6mb' }));
 app.use(express.urlencoded({ extended: true, limit: '6mb' }));
 
+app.get('/api/health', (req, res) => {
+  res.json({ ok: true, service: 'mcad-backend' });
+});
+
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/events', require('./routes/events'));

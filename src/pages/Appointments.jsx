@@ -307,10 +307,10 @@ export default function Appointments() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Permanently delete this appointment?')) return;
+    if (!window.confirm('Remove this appointment from the system? The record will stay in the database archive.')) return;
     try {
       await api.delete(`/appointments/${id}`);
-      toast.success('Deleted');
+      toast.success('Appointment removed from the system');
       fetchAppointments();
     } catch {
       toast.error('Delete failed');

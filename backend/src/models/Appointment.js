@@ -22,6 +22,8 @@ const appointmentSchema = new mongoose.Schema(
     },
     requestedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    deletedAt: { type: Date },
     notes: { type: String, trim: true }, // admin notes / remarks
     rejectionReason: { type: String, trim: true },
   },
@@ -33,7 +35,7 @@ appointmentSchema.pre('validate', async function (next) {
 
   if (!this.appointmentNumber) {
     const last = await this.constructor
-      .findOne({ appointmentNumber: { $exists: true } })
+      .findOne({ appointmentNumber: { $exists: true }, deletedAt: { $exists: false } })
       .sort({ appointmentNumber: -1 })
       .select('appointmentNumber')
       .lean();

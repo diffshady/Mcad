@@ -4,6 +4,8 @@ const Appointment = require('../models/Appointment');
 const Counter = require('../models/Counter');
 const { protect, authorize } = require('../middleware/auth');
 
+const ACTIVE_APPOINTMENT_FILTER = { deletedAt: { $exists: false } };
+
 function parseAppointmentDate(value) {
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
@@ -15,6 +17,7 @@ function isPastAppointmentDate(date) {
 
 async function findConflictingAppointment(appointmentDate, excludeId) {
   const filter = {
+    ...ACTIVE_APPOINTMENT_FILTER,
     appointmentDate,
     status: { $nin: ['cancelled', 'rejected'] },
   };
@@ -31,7 +34,7 @@ async function findConflictingAppointment(appointmentDate, excludeId) {
 router.get('/', protect, async (req, res) => {
   try {
     const { status } = req.query;
-    const filter = {};
+    const filter = { ...ACTIVE_APPOINTMENT_FILTER };
     if (status) filter.status = status;
 
     if (!['admin', 'barangay_admin', 'imam'].includes(req.user.role)) {
@@ -53,7 +56,7 @@ router.get('/', protect, async (req, res) => {
 router.get('/next-ticket', protect, async (req, res) => {
   try {
     const [last, counter] = await Promise.all([
-      Appointment.findOne({ appointmentNumber: { $exists: true } })
+      Appointment.findOne({ appointmentNumber: { $exists: true }, ...ACTIVE_APPOINTMENT_FILTER })
         .sort({ appointmentNumber: -1 })
         .select('appointmentNumber')
         .lean(),
@@ -73,7 +76,7 @@ router.get('/next-ticket', protect, async (req, res) => {
 // GET /api/appointments/:id
 router.get('/:id', protect, async (req, res) => {
   try {
-    const appt = await Appointment.findById(req.params.id)
+    const appt = await Appointment.findOne({ _id: req.params.id, ...ACTIVE_APPOINTMENT_FILTER })
       .populate('requestedBy', 'name role barangay phone email')
       .populate('reviewedBy', 'name');
 
@@ -132,7 +135,7 @@ router.post('/', protect, async (req, res) => {
 // PUT /api/appointments/:id — owner can edit if still pending
 router.put('/:id', protect, async (req, res) => {
   try {
-    const appt = await Appointment.findById(req.params.id);
+    const appt = await Appointment.findOne({ _id: req.params.id, ...ACTIVE_APPOINTMENT_FILTER });
     if (!appt) return res.status(404).json({ message: 'Appointment not found' });
 
     const isOwner = appt.requestedBy.toString() === req.user._id.toString();
@@ -190,8 +193,8 @@ router.put('/:id/review', protect, authorize('admin', 'barangay_admin', 'imam'),
       return res.status(400).json({ message: 'Status must be approved, rejected, or completed' });
     }
 
-    const appt = await Appointment.findByIdAndUpdate(
-      req.params.id,
+    const appt = await Appointment.findOneAndUpdate(
+      { _id: req.params.id, ...ACTIVE_APPOINTMENT_FILTER },
       { status, notes, rejectionReason, reviewedBy: req.user._id },
       { new: true }
     ).populate('requestedBy', 'name role barangay');
@@ -207,7 +210,7 @@ router.put('/:id/review', protect, authorize('admin', 'barangay_admin', 'imam'),
 // PUT /api/appointments/:id/cancel — owner can cancel pending/approved
 router.put('/:id/cancel', protect, async (req, res) => {
   try {
-    const appt = await Appointment.findById(req.params.id);
+    const appt = await Appointment.findOne({ _id: req.params.id, ...ACTIVE_APPOINTMENT_FILTER });
     if (!appt) return res.status(404).json({ message: 'Appointment not found' });
 
     const isOwner = appt.requestedBy.toString() === req.user._id.toString();
@@ -232,10 +235,25 @@ router.put('/:id/cancel', protect, async (req, res) => {
 // DELETE /api/appointments/:id — admin only
 router.delete('/:id', protect, authorize('admin'), async (req, res) => {
   try {
-    const appt = await Appointment.findByIdAndDelete(req.params.id);
+    const appt = await Appointment.findOne({ _id: req.params.id, ...ACTIVE_APPOINTMENT_FILTER });
     if (!appt) return res.status(404).json({ message: 'Appointment not found' });
 
-    const remainingAppointments = await Appointment.exists({});
+    await Appointment.collection.updateOne(
+      { _id: appt._id },
+      {
+        $set: {
+          status: 'cancelled',
+          deletedAt: new Date(),
+          deletedBy: req.user._id,
+        },
+        $unset: {
+          appointmentNumber: '',
+          ticketNumber: '',
+        },
+      }
+    );
+
+    const remainingAppointments = await Appointment.exists(ACTIVE_APPOINTMENT_FILTER);
     if (!remainingAppointments) {
       await Counter.findByIdAndUpdate(
         'appointmentNumber',
@@ -244,7 +262,7 @@ router.delete('/:id', protect, authorize('admin'), async (req, res) => {
       );
     }
 
-    res.json({ message: 'Appointment deleted' });
+    res.json({ message: 'Appointment removed from the system' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

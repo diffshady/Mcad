@@ -1,10 +1,6 @@
 import axios from 'axios';
 
-const normalize = (value = '') => value.replace(/\/+$/, '');
-const withApiSuffix = (value = '') => (/\/api$/i.test(value) ? value : `${value}/api`);
-
-const envBase = normalize(import.meta.env.VITE_API_BASE_URL || '');
-const baseURL = envBase ? withApiSuffix(envBase) : '/api';
+const baseURL = '/api';
 
 const api = axios.create({
   baseURL,
@@ -12,9 +8,8 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  // Many calls use leading "/auth/..." style paths. Ensure /api prefix only in proxy mode.
-  const isProxyMode = !envBase;
-  if (isProxyMode && typeof config.url === 'string' && config.url.startsWith('/') && !config.url.startsWith('/api/')) {
+  // Many calls use leading "/auth/..." style paths. Ensure /api prefix is always present.
+  if (typeof config.url === 'string' && config.url.startsWith('/') && !config.url.startsWith('/api/')) {
     config.url = `/api${config.url}`;
   }
   const token = localStorage.getItem('mcad_token');

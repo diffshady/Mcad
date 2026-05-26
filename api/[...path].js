@@ -17,10 +17,18 @@ export default async function handler(req, res) {
   const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
   const targetUrl = `${backendRoot}/${pathPart}${query}`;
 
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+
   const headers = { ...req.headers };
   delete headers.host;
   delete headers.connection;
   delete headers['content-length'];
+  delete headers.origin;
+  delete headers.referer;
+  delete headers['access-control-request-method'];
+  delete headers['access-control-request-headers'];
 
   let body;
   if (!['GET', 'HEAD'].includes(req.method)) {

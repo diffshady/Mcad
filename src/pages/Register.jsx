@@ -125,7 +125,8 @@ export default function Register() {
                 <option value="viewer">Community Viewer (Resident)</option>
                 <option value="leader">Community Leader / Organizer</option>
                 <option value="imam">Imam / Mosque Administrator</option>
-                <option value="admin">LGU / Barangay Administrator</option>
+                <option value="barangay_admin">Barangay Administrator</option>
+                <option value="admin">System Administrator (Higher Access)</option>
               </select>
               {form.role !== 'viewer' && (
                 <div className="form-hint"><AppIcon name="alert" size={12} className="inline-icon" /> Non-viewer roles require admin approval before access is granted.</div>

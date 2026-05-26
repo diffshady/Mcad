@@ -56,13 +56,14 @@ export function AuthProvider({ children }) {
   };
 
   const isAdmin = user?.role === 'admin';
+  const isBarangayAdmin = user?.role === 'barangay_admin';
   const isImam = user?.role === 'imam';
   const isLeader = user?.role === 'leader';
   const isViewer = user?.role === 'viewer';
-  const canManage = ['admin', 'imam', 'leader'].includes(user?.role);
+  const canManage = ['admin', 'barangay_admin', 'imam', 'leader'].includes(user?.role);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, isAdmin, isImam, isLeader, isViewer, canManage }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, isAdmin, isBarangayAdmin, isImam, isLeader, isViewer, canManage }}>
       {children}
     </AuthContext.Provider>
   );

@@ -53,8 +53,8 @@ router.get('/:id', protect, async (req, res) => {
   }
 });
 
-// POST /api/events — admin, imam, leader
-router.post('/', protect, authorize('admin', 'imam', 'leader'), async (req, res) => {
+// POST /api/events — admin, barangay admin, imam, leader
+router.post('/', protect, authorize('admin', 'barangay_admin', 'imam', 'leader'), async (req, res) => {
   try {
     const { startDate, endDate } = req.body;
     if (endDate && new Date(endDate) < new Date(startDate)) {
@@ -72,7 +72,7 @@ router.post('/', protect, authorize('admin', 'imam', 'leader'), async (req, res)
 });
 
 // PUT /api/events/:id
-router.put('/:id', protect, authorize('admin', 'imam', 'leader'), async (req, res) => {
+router.put('/:id', protect, authorize('admin', 'barangay_admin', 'imam', 'leader'), async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: 'Event not found' });
@@ -117,7 +117,7 @@ router.put('/:id/approve', protect, authorize('admin'), async (req, res) => {
 });
 
 // DELETE /api/events/:id
-router.delete('/:id', protect, authorize('admin', 'imam', 'leader'), async (req, res) => {
+router.delete('/:id', protect, authorize('admin', 'barangay_admin', 'imam', 'leader'), async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: 'Event not found' });

@@ -12,7 +12,7 @@ router.get('/', protect, async (req, res) => {
     const filter = {};
     if (status) filter.status = status;
 
-    if (!['admin', 'imam'].includes(req.user.role)) {
+    if (!['admin', 'barangay_admin', 'imam'].includes(req.user.role)) {
       filter.requestedBy = req.user._id;
     }
 
@@ -58,7 +58,7 @@ router.get('/:id', protect, async (req, res) => {
     if (!appt) return res.status(404).json({ message: 'Appointment not found' });
 
     // Only admin/imam or the owner can view
-    if (!['admin', 'imam'].includes(req.user.role) && appt.requestedBy._id.toString() !== req.user._id.toString()) {
+    if (!['admin', 'barangay_admin', 'imam'].includes(req.user.role) && appt.requestedBy._id.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Access denied' });
     }
 
@@ -100,7 +100,7 @@ router.put('/:id', protect, async (req, res) => {
     if (!appt) return res.status(404).json({ message: 'Appointment not found' });
 
     const isOwner = appt.requestedBy.toString() === req.user._id.toString();
-    const isAdmin = ['admin', 'imam'].includes(req.user.role);
+    const isAdmin = ['admin', 'barangay_admin', 'imam'].includes(req.user.role);
 
     if (!isOwner && !isAdmin) {
       return res.status(403).json({ message: 'Not authorized to edit this appointment' });
@@ -127,8 +127,8 @@ router.put('/:id', protect, async (req, res) => {
   }
 });
 
-// PUT /api/appointments/:id/review — admin/imam: approve or reject
-router.put('/:id/review', protect, authorize('admin', 'imam'), async (req, res) => {
+// PUT /api/appointments/:id/review — admin/barangay_admin/imam: approve or reject
+router.put('/:id/review', protect, authorize('admin', 'barangay_admin', 'imam'), async (req, res) => {
   try {
     const { status, notes, rejectionReason } = req.body;
 
@@ -157,7 +157,7 @@ router.put('/:id/cancel', protect, async (req, res) => {
     if (!appt) return res.status(404).json({ message: 'Appointment not found' });
 
     const isOwner = appt.requestedBy.toString() === req.user._id.toString();
-    const isAdmin = ['admin', 'imam'].includes(req.user.role);
+    const isAdmin = ['admin', 'barangay_admin', 'imam'].includes(req.user.role);
 
     if (!isOwner && !isAdmin) {
       return res.status(403).json({ message: 'Not authorized' });

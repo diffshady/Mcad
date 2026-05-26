@@ -5,11 +5,11 @@ import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import AppIcon from '../components/AppIcon';
 
-const ROLES = ['admin', 'imam', 'leader', 'viewer'];
+const ROLES = ['admin', 'barangay_admin', 'imam', 'leader', 'viewer'];
 const STATUSES = ['active', 'pending', 'suspended'];
-const roleBadge = (r) => ({ admin: 'badge-red', imam: 'badge-blue', leader: 'badge-green', viewer: 'badge-gray' }[r] || 'badge-gray');
+const roleBadge = (r) => ({ admin: 'badge-red', barangay_admin: 'badge-red', imam: 'badge-blue', leader: 'badge-green', viewer: 'badge-gray' }[r] || 'badge-gray');
 const statusBadge = (s) => ({ active: 'badge-green', pending: 'badge-yellow', suspended: 'badge-red' }[s] || 'badge-gray');
-const roleLabel = (r) => ({ admin: 'Barangay Admin', imam: 'Imam / Mosque Admin', leader: 'Community Leader', viewer: 'Community Viewer' }[r] || r);
+const roleLabel = (r) => ({ admin: 'Admin', barangay_admin: 'Barangay Admin', imam: 'Imam / Mosque Admin', leader: 'Community Leader', viewer: 'Community Viewer' }[r] || r);
 
 export default function Users() {
   const [users, setUsers] = useState([]);

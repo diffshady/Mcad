@@ -42,8 +42,8 @@ router.get('/:id', protect, async (req, res) => {
   }
 });
 
-// POST /api/announcements — admin, imam
-router.post('/', protect, authorize('admin', 'imam'), async (req, res) => {
+// POST /api/announcements — admin, barangay admin, imam
+router.post('/', protect, authorize('admin', 'barangay_admin', 'imam'), async (req, res) => {
   try {
     const ann = await Announcement.create({ ...req.body, postedBy: req.user._id });
     res.status(201).json(ann);
@@ -53,7 +53,7 @@ router.post('/', protect, authorize('admin', 'imam'), async (req, res) => {
 });
 
 // PUT /api/announcements/:id
-router.put('/:id', protect, authorize('admin', 'imam'), async (req, res) => {
+router.put('/:id', protect, authorize('admin', 'barangay_admin', 'imam'), async (req, res) => {
   try {
     const ann = await Announcement.findById(req.params.id);
     if (!ann) return res.status(404).json({ message: 'Announcement not found' });
@@ -68,7 +68,7 @@ router.put('/:id', protect, authorize('admin', 'imam'), async (req, res) => {
 });
 
 // DELETE /api/announcements/:id
-router.delete('/:id', protect, authorize('admin', 'imam'), async (req, res) => {
+router.delete('/:id', protect, authorize('admin', 'barangay_admin', 'imam'), async (req, res) => {
   try {
     const ann = await Announcement.findById(req.params.id);
     if (!ann) return res.status(404).json({ message: 'Announcement not found' });

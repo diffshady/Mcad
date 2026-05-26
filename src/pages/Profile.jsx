@@ -5,8 +5,8 @@ import api from '../api/axios';
 import toast from 'react-hot-toast';
 import AppIcon from '../components/AppIcon';
 
-const roleLabel = (r) => ({ admin: 'Barangay Admin', imam: 'Imam / Mosque Admin', leader: 'Community Leader', viewer: 'Community Viewer' }[r] || r);
-const roleBadge = (r) => ({ admin: 'badge-red', imam: 'badge-blue', leader: 'badge-green', viewer: 'badge-gray' }[r] || 'badge-gray');
+const roleLabel = (r) => ({ admin: 'Admin', barangay_admin: 'Barangay Admin', imam: 'Imam / Mosque Admin', leader: 'Community Leader', viewer: 'Community Viewer' }[r] || r);
+const roleBadge = (r) => ({ admin: 'badge-red', barangay_admin: 'badge-red', imam: 'badge-blue', leader: 'badge-green', viewer: 'badge-gray' }[r] || 'badge-gray');
 
 export default function Profile() {
   const { user } = useAuth();

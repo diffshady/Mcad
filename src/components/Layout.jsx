@@ -29,7 +29,8 @@ export default function Layout({ title, children }) {
           <div className="topbar-right">
             <span className="topbar-date">{today}</span>
             <span style={{ fontSize: '0.78rem', background: 'rgba(26,92,58,0.1)', color: 'var(--primary)', padding: '3px 10px', borderRadius: 20, fontWeight: 600, textTransform: 'capitalize' }}>
-              {user?.role === 'admin' ? 'Barangay Admin' :
+              {user?.role === 'admin' ? 'Admin' :
+              user?.role === 'barangay_admin' ? 'Barangay Admin' :
                user?.role === 'imam' ? 'Imam' :
                user?.role === 'leader' ? 'Community Leader' : 'Viewer'}
             </span>

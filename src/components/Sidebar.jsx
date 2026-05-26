@@ -4,13 +4,13 @@ import BrandLogo from './BrandLogo';
 import AppIcon from './AppIcon';
 
 const navItems = [
-  { to: '/dashboard', icon: 'dashboard', label: 'Dashboard', roles: ['admin', 'imam', 'leader', 'viewer'] },
-  { to: '/events', icon: 'events', label: 'Events', roles: ['admin', 'imam', 'leader', 'viewer'] },
-  { to: '/announcements', icon: 'announcements', label: 'Announcements', roles: ['admin', 'imam', 'leader', 'viewer'] },
-  { to: '/appointments', icon: 'appointments', label: 'Appointments', roles: ['admin', 'imam', 'leader', 'viewer'] },
-  { to: '/attendance', icon: 'attendance', label: 'Attendance', roles: ['admin', 'imam', 'leader'] },
-  { to: '/donations', icon: 'donations', label: 'Donations', roles: ['admin', 'imam', 'leader', 'viewer'] },
-  { to: '/reports', icon: 'reports', label: 'Reports', roles: ['admin', 'imam', 'leader'] },
+  { to: '/dashboard', icon: 'dashboard', label: 'Dashboard', roles: ['admin', 'barangay_admin', 'imam', 'leader', 'viewer'] },
+  { to: '/events', icon: 'events', label: 'Events', roles: ['admin', 'barangay_admin', 'imam', 'leader', 'viewer'] },
+  { to: '/announcements', icon: 'announcements', label: 'Announcements', roles: ['admin', 'barangay_admin', 'imam', 'leader', 'viewer'] },
+  { to: '/appointments', icon: 'appointments', label: 'Appointments', roles: ['admin', 'barangay_admin', 'imam', 'leader', 'viewer'] },
+  { to: '/attendance', icon: 'attendance', label: 'Attendance', roles: ['admin', 'barangay_admin', 'imam', 'leader'] },
+  { to: '/donations', icon: 'donations', label: 'Donations', roles: ['admin', 'barangay_admin', 'imam', 'leader', 'viewer'] },
+  { to: '/reports', icon: 'reports', label: 'Reports', roles: ['admin', 'barangay_admin', 'imam', 'leader'] },
   { to: '/users', icon: 'users', label: 'User Management', roles: ['admin'] },
 ];
 
@@ -60,7 +60,8 @@ export default function Sidebar({ open, onClose }) {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div className="sidebar-user-name">{user?.name}</div>
               <div className="sidebar-user-role">
-                {user?.role === 'admin' ? 'Barangay Admin' :
+                 {user?.role === 'admin' ? 'Admin' :
+                  user?.role === 'barangay_admin' ? 'Barangay Admin' :
                  user?.role === 'imam' ? 'Imam / Mosque Admin' :
                  user?.role === 'leader' ? 'Community Leader' : 'Community Viewer'}
               </div>

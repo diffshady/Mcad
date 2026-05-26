@@ -37,7 +37,7 @@ const emptyForm = {
 
 export default function Appointments() {
   const { user, isAdmin } = useAuth();
-  const isManager = ['admin', 'imam'].includes(user?.role);
+  const isManager = ['admin', 'barangay_admin', 'imam'].includes(user?.role);
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);

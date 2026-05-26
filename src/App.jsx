@@ -46,8 +46,8 @@ export default function App() {
             <Route path="/profile" element={<Profile />} />
           </Route>
 
-          {/* Protected – admin, imam, leader */}
-          <Route element={<ProtectedRoute allowedRoles={['admin', 'imam', 'leader']} />}>
+          {/* Protected – admin, barangay admin, imam, leader */}
+          <Route element={<ProtectedRoute allowedRoles={['admin', 'barangay_admin', 'imam', 'leader']} />}>
             <Route path="/attendance" element={<Attendance />} />
             <Route path="/reports" element={<Reports />} />
           </Route>

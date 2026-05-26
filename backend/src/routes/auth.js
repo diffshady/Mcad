@@ -20,7 +20,7 @@ router.post(
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
     body('phone').optional({ checkFalsy: true })
       .matches(/^09\d{9}$/).withMessage('Phone number must be 11 digits and start with 09'),
-    body('role').isIn(['admin', 'imam', 'leader', 'viewer']).withMessage('Invalid role'),
+    body('role').isIn(['admin', 'barangay_admin', 'imam', 'leader', 'viewer']).withMessage('Invalid role'),
   ],
   async (req, res) => {
     const errors = validationResult(req);

@@ -61,7 +61,7 @@ router.post('/', protect, async (req, res) => {
 });
 
 // PUT /api/donations/:id
-router.put('/:id', protect, authorize('admin', 'leader'), async (req, res) => {
+router.put('/:id', protect, authorize('admin', 'barangay_admin', 'leader'), async (req, res) => {
   try {
     const donation = await Donation.findByIdAndUpdate(req.params.id, req.body, {
       new: true,

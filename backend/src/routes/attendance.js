@@ -33,8 +33,8 @@ router.get('/:id', protect, async (req, res) => {
   }
 });
 
-// POST /api/attendance — admin, imam, leader
-router.post('/', protect, authorize('admin', 'imam', 'leader'), async (req, res) => {
+// POST /api/attendance — admin, barangay admin, imam, leader
+router.post('/', protect, authorize('admin', 'barangay_admin', 'imam', 'leader'), async (req, res) => {
   try {
     const { event, attendees } = req.body;
     const existing = await Attendance.findOne({ event });
@@ -59,7 +59,7 @@ router.post('/', protect, authorize('admin', 'imam', 'leader'), async (req, res)
 });
 
 // PUT /api/attendance/:id
-router.put('/:id', protect, authorize('admin', 'imam', 'leader'), async (req, res) => {
+router.put('/:id', protect, authorize('admin', 'barangay_admin', 'imam', 'leader'), async (req, res) => {
   try {
     const { attendees } = req.body;
     const totalAttendees = attendees ? attendees.filter((a) => a.present).length : 0;

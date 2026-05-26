@@ -14,7 +14,7 @@ const emptyForm = { title: '', content: '', category: 'general', expiresAt: '' }
 
 export default function Announcements() {
   const { user, isAdmin } = useAuth();
-  const canPost = ['admin', 'imam'].includes(user?.role);
+  const canPost = ['admin', 'barangay_admin', 'imam'].includes(user?.role);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

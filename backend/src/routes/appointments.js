@@ -234,6 +234,16 @@ router.delete('/:id', protect, authorize('admin'), async (req, res) => {
   try {
     const appt = await Appointment.findByIdAndDelete(req.params.id);
     if (!appt) return res.status(404).json({ message: 'Appointment not found' });
+
+    const remainingAppointments = await Appointment.exists({});
+    if (!remainingAppointments) {
+      await Counter.findByIdAndUpdate(
+        'appointmentNumber',
+        { $set: { seq: 0 } },
+        { upsert: true }
+      );
+    }
+
     res.json({ message: 'Appointment deleted' });
   } catch (err) {
     res.status(500).json({ message: err.message });

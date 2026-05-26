@@ -51,6 +51,10 @@ const ticketRank = (appt, indexFallback = 999999) => {
   return indexFallback;
 };
 
+const strikeThrough = (text) => text.split('').map((char) => (char === ' ' ? char : `${char}`)).join('');
+
+const formatBookedTimeLabel = (text) => text.split('').map((char) => (char === ' ' ? char : `${char}̶`)).join('');
+
 const defaultTimeFields = {
   appointmentTime: '9:00',
   appointmentPeriod: 'AM',
@@ -462,7 +466,7 @@ export default function Appointments() {
                       <select name="appointmentTime" className="form-select" value={form.appointmentTime} onChange={handleChange}>
                         {availableTimeOptions.map((option) => (
                           <option key={`${form.appointmentPeriod}-${option.value}`} value={option.value} disabled={option.isBooked}>
-                            {option.isBooked ? `${option.label} (Booked)` : option.label}
+                            {option.isBooked ? formatBookedTimeLabel(option.label) : option.label}
                           </option>
                         ))}
                       </select>

@@ -21,7 +21,7 @@ const emptyForm = { donorName: '', donationType: 'cash', amount: '', quantity: '
 export default function Donations() {
   const { isAdmin } = useAuth();
   const { user } = useAuth();
-  const canRecord = ['admin', 'barangay_admin', 'leader'].includes(user?.role);
+  const canRecord = user?.role === 'admin';
   const canDonate = true; // all authenticated users can donate
   const [donations, setDonations] = useState([]);
   const [events, setEvents] = useState([]);

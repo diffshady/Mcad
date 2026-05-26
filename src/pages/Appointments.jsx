@@ -15,18 +15,26 @@ const PURPOSES = [
   { value: 'other', label: 'Other' },
 ];
 
-const TIME_OPTIONS = Array.from({ length: 12 * 12 }, (_, index) => {
-  const totalMinutes = index * 5;
-  const hour12 = Math.floor(totalMinutes / 60) + 1;
-  const minute = String(totalMinutes % 60).padStart(2, '0');
-
-  return {
-    value: `${String(hour12)}:${minute}`,
-    label: `${hour12}:${minute}`,
-  };
-});
-
 const PERIOD_OPTIONS = ['AM', 'PM'];
+const PERIOD_HOURS = {
+  AM: [7, 8, 9, 10, 11, 12],
+  PM: [1, 2, 3, 4, 5],
+};
+
+const TIME_OPTIONS = Object.fromEntries(
+  Object.entries(PERIOD_HOURS).map(([period, hours]) => [
+    period,
+    hours.flatMap((hour) =>
+      Array.from({ length: 12 }, (_, index) => {
+        const minute = String(index * 5).padStart(2, '0');
+        return {
+          value: `${hour}:${minute}`,
+          label: `${hour}:${minute}`,
+        };
+      })
+    ),
+  ])
+);
 
 const statusBadge = (s) =>
   ({ pending: 'badge-yellow', approved: 'badge-green', rejected: 'badge-red', completed: 'badge-gray', cancelled: 'badge-red' }[s] || 'badge-gray');
@@ -109,6 +117,7 @@ export default function Appointments() {
   const [reviewForm, setReviewForm] = useState({ status: 'approved', notes: '', rejectionReason: '' });
   const [saving, setSaving] = useState(false);
   const [nextTicket, setNextTicket] = useState('');
+  const availableTimeOptions = TIME_OPTIONS[form.appointmentPeriod] || TIME_OPTIONS.AM;
 
   const fetchAppointments = async () => {
     setLoading(true);
@@ -161,7 +170,23 @@ export default function Appointments() {
     setShowReviewModal(true);
   };
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === 'appointmentPeriod') {
+      const nextOptions = TIME_OPTIONS[value] || [];
+      const currentTimeStillAllowed = nextOptions.some((option) => option.value === form.appointmentTime);
+
+      setForm((currentForm) => ({
+        ...currentForm,
+        appointmentPeriod: value,
+        appointmentTime: currentTimeStillAllowed ? currentForm.appointmentTime : (nextOptions[0]?.value || ''),
+      }));
+      return;
+    }
+
+    setForm({ ...form, [name]: value });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -399,7 +424,7 @@ export default function Appointments() {
                     <label className="form-label">Appointment Time *</label>
                     <div className="form-row" style={{ gridTemplateColumns: '110px minmax(0, 1fr)', gap: 8 }}>
                       <select name="appointmentTime" className="form-select" value={form.appointmentTime} onChange={handleChange}>
-                        {TIME_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                        {availableTimeOptions.map((option) => <option key={`${form.appointmentPeriod}-${option.value}`} value={option.value}>{option.label}</option>)}
                       </select>
                       <select name="appointmentPeriod" className="form-select" value={form.appointmentPeriod} onChange={handleChange}>
                         {PERIOD_OPTIONS.map((period) => <option key={period} value={period}>{period}</option>)}

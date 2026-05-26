@@ -146,6 +146,8 @@ router.delete('/profile-photo', protect, async (req, res) => {
 // PUT /api/auth/change-password — logged-in user changes own password
 router.put('/change-password', protect, async (req, res) => {
   try {
+    return res.status(403).json({ message: 'Password changes are temporarily disabled. Please contact the administrator.' });
+
     const { currentPassword, newPassword } = req.body;
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ message: 'Current and new password are required' });
@@ -210,6 +212,8 @@ router.post('/forgot-password', async (req, res) => {
 // POST /api/auth/reset-password/:token — reset with token
 router.post('/reset-password/:token', async (req, res) => {
   try {
+    return res.status(403).json({ message: 'Password changes are temporarily disabled. Please contact the administrator.' });
+
     const { newPassword } = req.body;
     if (!newPassword || newPassword.length < 6) {
       return res.status(400).json({ message: 'Password must be at least 6 characters' });

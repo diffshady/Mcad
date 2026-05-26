@@ -126,7 +126,7 @@ export default function Register() {
             <BrandLogo size={44} variant="dark" />
             <div>
               <div className="portal-topbar-title">Republic of the Philippines</div>
-              <div className="portal-topbar-sub">MCAD Access Gateway</div>
+              <div className="portal-topbar-sub">City Mayor's Office - General Santos City</div>
             </div>
           </div>
           <div className="portal-topbar-right" aria-live="polite">

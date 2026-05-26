@@ -107,7 +107,7 @@ export default function Login() {
             <BrandLogo size={44} variant="dark" />
             <div>
               <div className="portal-topbar-title">Republic of the Philippines</div>
-              <div className="portal-topbar-sub">MCAD Access Gateway</div>
+              <div className="portal-topbar-sub">City Mayor's Office - General Santos City</div>
             </div>
           </div>
           <div className="portal-topbar-right" aria-live="polite">
@@ -121,7 +121,7 @@ export default function Login() {
         <div className="portal-overlay" />
         <div className="portal-content">
           <BrandLogo className="portal-center-logo" size={108} variant="light" />
-          <h1 className="portal-heading">Muslim Concerns and Affairs Division</h1>
+          <h1 className="portal-heading">Muslim Concerns and Affairs Division (MCAD)</h1>
           <p className="portal-subheading">Secure portal for administrators and community viewers</p>
 
           {!portal ? (

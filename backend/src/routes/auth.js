@@ -180,9 +180,11 @@ router.post('/forgot-password', async (req, res) => {
 
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/${token}`;
 
+    const emailPort = Number(process.env.EMAIL_PORT || 587);
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
-      port: process.env.EMAIL_PORT,
+      port: emailPort,
+      secure: emailPort === 465,
       auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
     });
 
@@ -200,7 +202,8 @@ router.post('/forgot-password', async (req, res) => {
 
     res.json({ message: 'If that email exists, a reset link has been sent.' });
   } catch (err) {
-    res.status(500).json({ message: 'Failed to send email. ' + err.message });
+    console.error('Forgot-password mail send error:', err.message);
+    res.status(500).json({ message: 'Unable to send reset email right now. Please verify email server settings and try again.' });
   }
 });
 

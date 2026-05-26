@@ -13,6 +13,19 @@ function isPastAppointmentDate(date) {
   return date.getTime() < Date.now();
 }
 
+async function findConflictingAppointment(appointmentDate, excludeId) {
+  const filter = {
+    appointmentDate,
+    status: { $nin: ['cancelled', 'rejected'] },
+  };
+
+  if (excludeId) {
+    filter._id = { $ne: excludeId };
+  }
+
+  return Appointment.findOne(filter).select('_id appointmentDate title status').lean();
+}
+
 // GET /api/appointments
 // Admin/imam sees all; leader/viewer sees only their own
 router.get('/', protect, async (req, res) => {
@@ -95,6 +108,11 @@ router.post('/', protect, async (req, res) => {
       return res.status(400).json({ message: 'Appointment date must be in the future' });
     }
 
+    const conflict = await findConflictingAppointment(parsedAppointmentDate);
+    if (conflict) {
+      return res.status(409).json({ message: 'That appointment time is already booked' });
+    }
+
     const appt = await Appointment.create({
       title,
       description,
@@ -142,6 +160,11 @@ router.put('/:id', protect, async (req, res) => {
 
       if (isPastAppointmentDate(parsedAppointmentDate)) {
         return res.status(400).json({ message: 'Appointment date must be in the future' });
+      }
+
+      const conflict = await findConflictingAppointment(parsedAppointmentDate, req.params.id);
+      if (conflict) {
+        return res.status(409).json({ message: 'That appointment time is already booked' });
       }
 
       payload.appointmentDate = parsedAppointmentDate;

@@ -15,18 +15,18 @@ const PURPOSES = [
   { value: 'other', label: 'Other' },
 ];
 
-const TIME_OPTIONS = Array.from({ length: 24 * 12 }, (_, index) => {
+const TIME_OPTIONS = Array.from({ length: 12 * 12 }, (_, index) => {
   const totalMinutes = index * 5;
-  const hour24 = Math.floor(totalMinutes / 60);
+  const hour12 = Math.floor(totalMinutes / 60) + 1;
   const minute = String(totalMinutes % 60).padStart(2, '0');
-  const period = hour24 >= 12 ? 'PM' : 'AM';
-  const hour12 = hour24 % 12 || 12;
 
   return {
-    value: `${String(hour24).padStart(2, '0')}:${minute}`,
-    label: `${hour12}:${minute} ${period}`,
+    value: `${String(hour12)}:${minute}`,
+    label: `${hour12}:${minute}`,
   };
 });
+
+const PERIOD_OPTIONS = ['AM', 'PM'];
 
 const statusBadge = (s) =>
   ({ pending: 'badge-yellow', approved: 'badge-green', rejected: 'badge-red', completed: 'badge-gray', cancelled: 'badge-red' }[s] || 'badge-gray');
@@ -44,7 +44,8 @@ const ticketRank = (appt, indexFallback = 999999) => {
 };
 
 const defaultTimeFields = {
-  appointmentTime: '09:00',
+  appointmentTime: '9:00',
+  appointmentPeriod: 'AM',
 };
 
 const getLocalDateFieldValue = (value) => {
@@ -60,19 +61,26 @@ const getTimeFieldValues = (value) => {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return defaultTimeFields;
 
+  const hour24 = parsed.getHours();
+  const hour12 = hour24 % 12 || 12;
+
   return {
-    appointmentTime: `${String(parsed.getHours()).padStart(2, '0')}:${String(parsed.getMinutes()).padStart(2, '0')}`,
+    appointmentTime: `${hour12}:${String(parsed.getMinutes()).padStart(2, '0')}`,
+    appointmentPeriod: hour24 >= 12 ? 'PM' : 'AM',
   };
 };
 
-const buildAppointmentDate = ({ appointmentDate, appointmentTime }) => {
+const buildAppointmentDate = ({ appointmentDate, appointmentTime, appointmentPeriod }) => {
   if (!appointmentDate) return null;
 
   const [year, month, day] = appointmentDate.split('-').map(Number);
   if (!year || !month || !day) return null;
 
-  const [hour, minute] = (appointmentTime || '').split(':').map(Number);
+  let [hour, minute] = (appointmentTime || '').split(':').map(Number);
   if (!Number.isInteger(hour) || !Number.isInteger(minute)) return null;
+
+  hour %= 12;
+  if (appointmentPeriod === 'PM') hour += 12;
 
   const parsed = new Date(year, month - 1, day, hour, minute, 0, 0);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
@@ -389,9 +397,14 @@ export default function Appointments() {
                   </div>
                   <div className="form-group">
                     <label className="form-label">Appointment Time *</label>
-                    <select name="appointmentTime" className="form-select" value={form.appointmentTime} onChange={handleChange}>
-                      {TIME_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-                    </select>
+                    <div className="form-row" style={{ gridTemplateColumns: '110px minmax(0, 1fr)', gap: 8 }}>
+                      <select name="appointmentPeriod" className="form-select" value={form.appointmentPeriod} onChange={handleChange}>
+                        {PERIOD_OPTIONS.map((period) => <option key={period} value={period}>{period}</option>)}
+                      </select>
+                      <select name="appointmentTime" className="form-select" value={form.appointmentTime} onChange={handleChange}>
+                        {TIME_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                      </select>
+                    </div>
                   </div>
                 </div>
                 <div className="form-row">

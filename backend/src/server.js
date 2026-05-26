@@ -9,14 +9,15 @@ const app = express();
 
 const allowedOrigins = (process.env.CLIENT_URLS || process.env.CLIENT_URL || 'http://localhost:5173')
   .split(',')
-  .map((o) => o.trim())
+  .map((o) => o.trim().replace(/\/+$/, ''))
   .filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (e.g., curl, health checks).
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
+    const normalizedOrigin = origin.trim().replace(/\/+$/, '');
+    if (allowedOrigins.includes(normalizedOrigin)) return callback(null, true);
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,

@@ -51,10 +51,6 @@ const ticketRank = (appt, indexFallback = 999999) => {
   return indexFallback;
 };
 
-const strikeThrough = (text) => text.split('').map((char) => (char === ' ' ? char : `${char}`)).join('');
-
-const formatBookedTimeLabel = (text) => text.split('').map((char) => (char === ' ' ? char : `${char}̶`)).join('');
-
 const defaultTimeFields = {
   appointmentTime: '9:00',
   appointmentPeriod: 'AM',
@@ -122,6 +118,14 @@ export default function Appointments() {
   const [saving, setSaving] = useState(false);
   const [nextTicket, setNextTicket] = useState('');
 
+  const hasOpenTimesForDate = (appointmentDate) => {
+    if (!appointmentDate) return true;
+
+    return PERIOD_OPTIONS.some((period) =>
+      getSelectableTimeOptions(appointmentDate, period).some((option) => !option.isBooked)
+    );
+  };
+
   const getBookedTimeValues = (appointmentDate, appointmentPeriod) => {
     if (!appointmentDate) return new Set();
 
@@ -146,6 +150,8 @@ export default function Appointments() {
   };
 
   const availableTimeOptions = getSelectableTimeOptions(form.appointmentDate, form.appointmentPeriod);
+  const hasOpenTimesInSelectedPeriod = availableTimeOptions.some((option) => !option.isBooked);
+  const isSelectedDateFullyBooked = Boolean(form.appointmentDate) && !hasOpenTimesForDate(form.appointmentDate);
 
   const fetchAppointments = async () => {
     setLoading(true);
@@ -216,11 +222,12 @@ export default function Appointments() {
     if (name === 'appointmentDate') {
       const nextOptions = getSelectableTimeOptions(value, form.appointmentPeriod);
       const currentTimeStillAllowed = nextOptions.some((option) => option.value === form.appointmentTime && !option.isBooked);
+      const nextOpenOption = nextOptions.find((option) => !option.isBooked);
 
       setForm((currentForm) => ({
         ...currentForm,
         appointmentDate: value,
-        appointmentTime: currentTimeStillAllowed ? currentForm.appointmentTime : (nextOptions.find((option) => !option.isBooked)?.value || ''),
+        appointmentTime: currentTimeStillAllowed ? currentForm.appointmentTime : (nextOpenOption?.value || ''),
       }));
       return;
     }
@@ -235,6 +242,11 @@ export default function Appointments() {
       const parsedAppointmentDate = buildAppointmentDate(form);
       if (!parsedAppointmentDate) {
         toast.error('Appointment date and time are required');
+        return;
+      }
+
+      if (isSelectedDateFullyBooked) {
+        toast.error('This day is fully booked. Please choose another date.');
         return;
       }
 
@@ -459,14 +471,19 @@ export default function Appointments() {
                       min={format(new Date(), 'yyyy-MM-dd')}
                       required value={form.appointmentDate} onChange={handleChange}
                     />
+                    {isSelectedDateFullyBooked && (
+                      <div style={{ marginTop: 6, fontSize: '0.75rem', color: 'var(--danger)' }}>
+                        This day is fully booked. Please choose another date.
+                      </div>
+                    )}
                   </div>
                   <div className="form-group">
                     <label className="form-label">Appointment Time *</label>
                     <div className="form-row" style={{ gridTemplateColumns: '110px minmax(0, 1fr)', gap: 8 }}>
-                      <select name="appointmentTime" className="form-select" value={form.appointmentTime} onChange={handleChange}>
+                      <select name="appointmentTime" className="form-select" value={form.appointmentTime} onChange={handleChange} disabled={!hasOpenTimesInSelectedPeriod}>
                         {availableTimeOptions.map((option) => (
                           <option key={`${form.appointmentPeriod}-${option.value}`} value={option.value} disabled={option.isBooked}>
-                            {option.isBooked ? formatBookedTimeLabel(option.label) : option.label}
+                            {option.isBooked ? `${option.label} - unavailable` : option.label}
                           </option>
                         ))}
                       </select>
@@ -476,7 +493,7 @@ export default function Appointments() {
                     </div>
                     {form.appointmentDate && (
                       <div style={{ marginTop: 6, fontSize: '0.75rem', color: 'var(--text-light)' }}>
-                        Booked times for the selected day are marked in the list.
+                        Unavailable times are disabled in the list.
                       </div>
                     )}
                   </div>
@@ -518,7 +535,7 @@ export default function Appointments() {
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-ghost" onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary" disabled={saving}>
+                <button type="submit" className="btn btn-primary" disabled={saving || isSelectedDateFullyBooked}>
                   {saving ? 'Submitting...' : editing ? 'Update Request' : 'Submit Request'}
                 </button>
               </div>

@@ -398,11 +398,11 @@ export default function Appointments() {
                   <div className="form-group">
                     <label className="form-label">Appointment Time *</label>
                     <div className="form-row" style={{ gridTemplateColumns: '110px minmax(0, 1fr)', gap: 8 }}>
-                      <select name="appointmentPeriod" className="form-select" value={form.appointmentPeriod} onChange={handleChange}>
-                        {PERIOD_OPTIONS.map((period) => <option key={period} value={period}>{period}</option>)}
-                      </select>
                       <select name="appointmentTime" className="form-select" value={form.appointmentTime} onChange={handleChange}>
                         {TIME_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                      </select>
+                      <select name="appointmentPeriod" className="form-select" value={form.appointmentPeriod} onChange={handleChange}>
+                        {PERIOD_OPTIONS.map((period) => <option key={period} value={period}>{period}</option>)}
                       </select>
                     </div>
                   </div>

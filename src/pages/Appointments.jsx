@@ -409,13 +409,6 @@ export default function Appointments() {
                       {PURPOSES.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                     </select>
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">Appointment Date & Time *</label>
-                    <input
-                      name="appointmentDate" type="datetime-local" className="form-input"
-                      required value={form.appointmentDate} onChange={handleChange}
-                    />
-                  </div>
                 </div>
                 <div className="form-row">
                   <div className="form-group">

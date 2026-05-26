@@ -15,6 +15,10 @@ const PURPOSES = [
   { value: 'other', label: 'Other' },
 ];
 
+const HOURS = Array.from({ length: 12 }, (_, index) => String(index + 1));
+const MINUTES = Array.from({ length: 60 }, (_, index) => String(index).padStart(2, '0'));
+const PERIODS = ['AM', 'PM'];
+
 const statusBadge = (s) =>
   ({ pending: 'badge-yellow', approved: 'badge-green', rejected: 'badge-red', completed: 'badge-gray', cancelled: 'badge-red' }[s] || 'badge-gray');
 
@@ -30,8 +34,53 @@ const ticketRank = (appt, indexFallback = 999999) => {
   return indexFallback;
 };
 
+const defaultTimeFields = {
+  appointmentHour: '9',
+  appointmentMinute: '00',
+  appointmentPeriod: 'AM',
+};
+
+const getLocalDateFieldValue = (value) => {
+  if (!value) return '';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return '';
+  return format(parsed, 'yyyy-MM-dd');
+};
+
+const getTimeFieldValues = (value) => {
+  if (!value) return defaultTimeFields;
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return defaultTimeFields;
+
+  const hour24 = parsed.getHours();
+  return {
+    appointmentHour: String(hour24 % 12 || 12),
+    appointmentMinute: String(parsed.getMinutes()).padStart(2, '0'),
+    appointmentPeriod: hour24 >= 12 ? 'PM' : 'AM',
+  };
+};
+
+const buildAppointmentDate = ({ appointmentDate, appointmentHour, appointmentMinute, appointmentPeriod }) => {
+  if (!appointmentDate) return null;
+
+  const [year, month, day] = appointmentDate.split('-').map(Number);
+  if (!year || !month || !day) return null;
+
+  const minute = Number(appointmentMinute);
+  let hour = Number(appointmentHour);
+  if (!Number.isInteger(hour) || !Number.isInteger(minute)) return null;
+
+  hour %= 12;
+  if (appointmentPeriod === 'PM') hour += 12;
+
+  const parsed = new Date(year, month - 1, day, hour, minute, 0, 0);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
 const emptyForm = {
   title: '', description: '', appointmentDate: '',
+  ...defaultTimeFields,
   venue: '', appointedWith: '', purpose: 'other',
 };
 
@@ -82,11 +131,13 @@ export default function Appointments() {
   };
 
   const openEdit = (appt) => {
+    const timeFields = getTimeFieldValues(appt.appointmentDate);
     setEditing(appt._id);
     setForm({
       title: appt.title,
       description: appt.description || '',
-      appointmentDate: appt.appointmentDate?.slice(0, 16),
+      appointmentDate: getLocalDateFieldValue(appt.appointmentDate),
+      ...timeFields,
       venue: appt.venue || '',
       appointedWith: appt.appointedWith || '',
       purpose: appt.purpose,
@@ -108,11 +159,31 @@ export default function Appointments() {
     e.preventDefault();
     setSaving(true);
     try {
+      const parsedAppointmentDate = buildAppointmentDate(form);
+      if (!parsedAppointmentDate) {
+        toast.error('Appointment date and time are required');
+        return;
+      }
+
+      if (parsedAppointmentDate.getTime() < Date.now()) {
+        toast.error('Appointment date must be in the future');
+        return;
+      }
+
+      const payload = {
+        title: form.title,
+        description: form.description,
+        appointmentDate: parsedAppointmentDate.toISOString(),
+        venue: form.venue,
+        appointedWith: form.appointedWith,
+        purpose: form.purpose,
+      };
+
       if (editing) {
-        await api.put(`/appointments/${editing}`, form);
+        await api.put(`/appointments/${editing}`, payload);
         toast.success('Appointment updated');
       } else {
-        const { data } = await api.post('/appointments', form);
+        const { data } = await api.post('/appointments', payload);
         toast.success(`Appointment submitted. Your ticket is ${formatTicketNumber(data, 1)}`);
       }
       setShowModal(false);
@@ -306,6 +377,30 @@ export default function Appointments() {
                     placeholder="e.g. Meeting with Barangay Captain"
                     value={form.title} onChange={handleChange}
                   />
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Appointment Date *</label>
+                    <input
+                      name="appointmentDate" type="date" className="form-input"
+                      min={format(new Date(), 'yyyy-MM-dd')}
+                      required value={form.appointmentDate} onChange={handleChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Appointment Time *</label>
+                    <div className="form-row" style={{ gap: 8 }}>
+                      <select name="appointmentPeriod" className="form-select" value={form.appointmentPeriod} onChange={handleChange} style={{ flex: '0 0 92px' }}>
+                        {PERIODS.map((period) => <option key={period} value={period}>{period}</option>)}
+                      </select>
+                      <select name="appointmentHour" className="form-select" value={form.appointmentHour} onChange={handleChange} style={{ flex: 1 }}>
+                        {HOURS.map((hour) => <option key={hour} value={hour}>{hour}</option>)}
+                      </select>
+                      <select name="appointmentMinute" className="form-select" value={form.appointmentMinute} onChange={handleChange} style={{ flex: 1 }}>
+                        {MINUTES.map((minute) => <option key={minute} value={minute}>{minute}</option>)}
+                      </select>
+                    </div>
+                  </div>
                 </div>
                 <div className="form-row">
                   <div className="form-group">

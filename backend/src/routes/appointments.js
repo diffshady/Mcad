@@ -4,6 +4,15 @@ const Appointment = require('../models/Appointment');
 const Counter = require('../models/Counter');
 const { protect, authorize } = require('../middleware/auth');
 
+function parseAppointmentDate(value) {
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function isPastAppointmentDate(date) {
+  return date.getTime() < Date.now();
+}
+
 // GET /api/appointments
 // Admin/imam sees all; leader/viewer sees only their own
 router.get('/', protect, async (req, res) => {
@@ -77,10 +86,19 @@ router.post('/', protect, async (req, res) => {
       return res.status(400).json({ message: 'Title and appointment date are required' });
     }
 
+    const parsedAppointmentDate = parseAppointmentDate(appointmentDate);
+    if (!parsedAppointmentDate) {
+      return res.status(400).json({ message: 'Appointment date is invalid' });
+    }
+
+    if (isPastAppointmentDate(parsedAppointmentDate)) {
+      return res.status(400).json({ message: 'Appointment date must be in the future' });
+    }
+
     const appt = await Appointment.create({
       title,
       description,
-      appointmentDate,
+      appointmentDate: parsedAppointmentDate,
       venue,
       appointedWith,
       purpose,
@@ -115,6 +133,19 @@ router.put('/:id', protect, async (req, res) => {
     delete payload.appointmentNumber;
     delete payload.ticketNumber;
     delete payload.requestedBy;
+
+    if (payload.appointmentDate !== undefined) {
+      const parsedAppointmentDate = parseAppointmentDate(payload.appointmentDate);
+      if (!parsedAppointmentDate) {
+        return res.status(400).json({ message: 'Appointment date is invalid' });
+      }
+
+      if (isPastAppointmentDate(parsedAppointmentDate)) {
+        return res.status(400).json({ message: 'Appointment date must be in the future' });
+      }
+
+      payload.appointmentDate = parsedAppointmentDate;
+    }
 
     const updated = await Appointment.findByIdAndUpdate(req.params.id, payload, {
       new: true,

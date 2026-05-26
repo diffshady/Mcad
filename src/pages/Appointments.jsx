@@ -5,6 +5,7 @@ import api from '../api/axios';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import AppIcon from '../components/AppIcon';
+import CalendarPicker from '../components/CalendarPicker';
 
 const PURPOSES = [
   { value: 'consultation', label: 'Consultation' },
@@ -39,6 +40,8 @@ const defaultTimeFields = {
   appointmentMinute: '00',
   appointmentPeriod: 'AM',
 };
+
+const QUICK_MINUTES = ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'];
 
 const getLocalDateFieldValue = (value) => {
   if (!value) return '';
@@ -75,6 +78,16 @@ const buildAppointmentDate = ({ appointmentDate, appointmentHour, appointmentMin
   if (appointmentPeriod === 'PM') hour += 12;
 
   const parsed = new Date(year, month - 1, day, hour, minute, 0, 0);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const getDateFromFieldValue = (value) => {
+  if (!value) return null;
+
+  const [year, month, day] = value.split('-').map(Number);
+  if (!year || !month || !day) return null;
+
+  const parsed = new Date(year, month - 1, day);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
@@ -154,6 +167,21 @@ export default function Appointments() {
   };
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleCalendarChange = (date) => {
+    if (!date) {
+      setForm((currentForm) => ({ ...currentForm, appointmentDate: '' }));
+      return;
+    }
+
+    setForm((currentForm) => ({
+      ...currentForm,
+      appointmentDate: format(date, 'yyyy-MM-dd'),
+    }));
+  };
+
+  const handleTimeFieldChange = (name, value) => {
+    setForm((currentForm) => ({ ...currentForm, [name]: value }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -238,6 +266,8 @@ export default function Appointments() {
   }).sort((a, b) => ticketRank(a) - ticketRank(b));
 
   const pendingCount = items.filter((a) => a.status === 'pending').length;
+  const selectedCalendarDate = getDateFromFieldValue(form.appointmentDate);
+  const appointmentPreview = buildAppointmentDate(form);
 
   return (
     <Layout title="Appointments">
@@ -380,25 +410,70 @@ export default function Appointments() {
                 </div>
                 <div className="form-row">
                   <div className="form-group">
-                    <label className="form-label">Appointment Date *</label>
-                    <input
-                      name="appointmentDate" type="date" className="form-input"
-                      min={format(new Date(), 'yyyy-MM-dd')}
-                      required value={form.appointmentDate} onChange={handleChange}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Appointment Time *</label>
-                    <div className="form-row" style={{ gap: 8 }}>
-                      <select name="appointmentPeriod" className="form-select" value={form.appointmentPeriod} onChange={handleChange} style={{ flex: '0 0 92px' }}>
-                        {PERIODS.map((period) => <option key={period} value={period}>{period}</option>)}
-                      </select>
-                      <select name="appointmentHour" className="form-select" value={form.appointmentHour} onChange={handleChange} style={{ flex: 1 }}>
-                        {HOURS.map((hour) => <option key={hour} value={hour}>{hour}</option>)}
-                      </select>
-                      <select name="appointmentMinute" className="form-select" value={form.appointmentMinute} onChange={handleChange} style={{ flex: 1 }}>
-                        {MINUTES.map((minute) => <option key={minute} value={minute}>{minute}</option>)}
-                      </select>
+                    <label className="form-label">Appointment Schedule *</label>
+                    <div className="appointment-scheduler">
+                      <div className="appointment-scheduler__calendar">
+                        <div className="appointment-scheduler__summary-label">Date</div>
+                        <div className="appointment-scheduler__summary-value">
+                          {selectedCalendarDate ? format(selectedCalendarDate, 'EEEE, MMM d, yyyy') : 'Choose a date'}
+                        </div>
+                        <CalendarPicker
+                          value={selectedCalendarDate || new Date()}
+                          onChange={handleCalendarChange}
+                          minDate={new Date()}
+                        />
+                      </div>
+                      <div className="appointment-scheduler__time">
+                        <div className="appointment-scheduler__summary-label">Time</div>
+                        <div className="appointment-scheduler__summary-value">
+                          {appointmentPreview ? format(appointmentPreview, 'h:mm a') : 'Choose a time'}
+                        </div>
+                        <div className="appointment-period-toggle" role="group" aria-label="Appointment period">
+                          {PERIODS.map((period) => (
+                            <button
+                              key={period}
+                              type="button"
+                              className={`appointment-period-toggle__btn ${form.appointmentPeriod === period ? 'is-active' : ''}`}
+                              onClick={() => handleTimeFieldChange('appointmentPeriod', period)}
+                            >
+                              {period}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="appointment-time-grid">
+                          {HOURS.map((hour) => (
+                            <button
+                              key={hour}
+                              type="button"
+                              className={`appointment-time-grid__btn ${form.appointmentHour === hour ? 'is-active' : ''}`}
+                              onClick={() => handleTimeFieldChange('appointmentHour', hour)}
+                            >
+                              {hour}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="appointment-scheduler__summary-label" style={{ marginTop: 10 }}>Minutes</div>
+                        <div className="appointment-minute-grid">
+                          {QUICK_MINUTES.map((minute) => (
+                            <button
+                              key={minute}
+                              type="button"
+                              className={`appointment-minute-grid__btn ${form.appointmentMinute === minute ? 'is-active' : ''}`}
+                              onClick={() => handleTimeFieldChange('appointmentMinute', minute)}
+                            >
+                              {minute}
+                            </button>
+                          ))}
+                        </div>
+                        <select
+                          name="appointmentMinute"
+                          className="form-select appointment-minute-select"
+                          value={form.appointmentMinute}
+                          onChange={handleChange}
+                        >
+                          {MINUTES.map((minute) => <option key={minute} value={minute}>{minute}</option>)}
+                        </select>
+                      </div>
                     </div>
                   </div>
                 </div>

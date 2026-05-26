@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   format, startOfMonth, endOfMonth,
   startOfWeek, endOfWeek, addDays,
@@ -11,11 +11,19 @@ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 
 function decadeStart(year) { return Math.floor(year / 10) * 10; }
 
-export default function CalendarPicker({ value, onChange, tileContent }) {
+function normalizeDate(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+export default function CalendarPicker({ value, onChange, tileContent, minDate }) {
   const [current, setCurrent] = useState(value || new Date());
   // view: 'days' | 'months' | 'years'
   const [view, setView] = useState('days');
   const today = new Date();
+
+  useEffect(() => {
+    if (value) setCurrent(value);
+  }, [value]);
 
   // ── Day grid ──────────────────────────────────────────────
   const monthStart = startOfMonth(current);
@@ -76,10 +84,12 @@ export default function CalendarPicker({ value, onChange, tileContent }) {
               const isToday    = isSameDay(day, today);
               const isSelected = value && isSameDay(day, value);
               const isWeekend  = (day.getDay() === 0 || day.getDay() === 6) && !isOther;
+              const isDisabled = minDate && normalizeDate(day) < normalizeDate(minDate);
               return (
                 <button key={i} type="button"
-                  className={['cal-day', isOther ? 'cal-day--other' : '', isToday ? 'cal-day--today' : '', isSelected ? 'cal-day--selected' : '', isWeekend ? 'cal-day--weekend' : ''].filter(Boolean).join(' ')}
-                  onClick={() => onChange(day)}
+                  className={['cal-day', isOther ? 'cal-day--other' : '', isToday ? 'cal-day--today' : '', isSelected ? 'cal-day--selected' : '', isWeekend ? 'cal-day--weekend' : '', isDisabled ? 'cal-day--disabled' : ''].filter(Boolean).join(' ')}
+                  onClick={() => !isDisabled && onChange(day)}
+                  disabled={isDisabled}
                 >
                   {day.getDate()}
                   {tileContent?.({ date: day })}

@@ -12,6 +12,10 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
+  // Many calls use leading "/auth/..." style paths. Ensure /api prefix is always present.
+  if (typeof config.url === 'string' && config.url.startsWith('/') && !config.url.startsWith('/api/')) {
+    config.url = `/api${config.url}`;
+  }
   const token = localStorage.getItem('mcad_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;

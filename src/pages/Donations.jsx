@@ -22,7 +22,6 @@ export default function Donations() {
   const { isAdmin } = useAuth();
   const { user } = useAuth();
   const canRecord = user?.role === 'admin';
-  const canSeeDonor = user?.role !== 'admin';
   const canDonate = true; // all authenticated users can donate
   const [donations, setDonations] = useState([]);
   const [events, setEvents] = useState([]);
@@ -152,20 +151,18 @@ export default function Donations() {
           <table>
             <thead>
               <tr>
-                {canSeeDonor && <th>Donor</th>}
+                <th>Donor</th>
                 <th>Type</th>
                 <th>Amount / Qty</th>
                 <th>Description</th>
                 <th>Event</th>
                 <th>Date Received</th>
-                {canRecord && <th>Recorded By</th>}
-                {canRecord && <th>Actions</th>}
               </tr>
             </thead>
             <tbody>
               {donations.map((d) => (
                 <tr key={d._id}>
-                  {canSeeDonor && <td style={{ fontWeight: 600 }}>{d.donorName || 'Anonymous'}</td>}
+                  <td style={{ fontWeight: 600 }}>{d.donorName || 'Anonymous'}</td>
                   <td><span className={`badge ${typeBadge(d.donationType)}`}>{d.donationType}</span></td>
                   <td>
                     {d.donationType === 'cash' ? `₱${(d.amount || 0).toLocaleString()}` : d.quantity || '—'}
@@ -173,15 +170,6 @@ export default function Donations() {
                   <td style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.description || '—'}</td>
                   <td>{d.event?.title || '—'}</td>
                   <td>{format(new Date(d.dateReceived), 'MMM d, yyyy')}</td>
-                  {canRecord && <td>{d.recordedBy?.name || '—'}</td>}
-                  {canRecord && (
-                    <td>
-                      <div className="table-actions">
-                        <button className="btn btn-sm btn-outline" onClick={() => openEdit(d)}>Edit</button>
-                        {isAdmin && <button className="btn btn-sm btn-danger" onClick={() => handleDelete(d._id)}>Del</button>}
-                      </div>
-                    </td>
-                  )}
                 </tr>
               ))}
             </tbody>

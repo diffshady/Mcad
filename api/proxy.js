@@ -20,6 +20,7 @@ export default async function handler(req, res) {
     .filter((part) => part && !part.startsWith('path='))
     .join('&');
   const targetUrl = `${backendRoot}/${pathPart}${cleanQuery ? `?${cleanQuery}` : ''}`;
+  console.log(`[proxy] ${req.method} ${req.url} -> ${targetUrl}`);
 
   if (req.method === 'OPTIONS') {
     return res.status(204).end();
@@ -49,6 +50,7 @@ export default async function handler(req, res) {
       headers,
       body,
     });
+    console.log(`[proxy] upstream status ${response.status} for ${targetUrl}`);
 
     const contentType = response.headers.get('content-type') || '';
     res.status(response.status);

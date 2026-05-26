@@ -22,6 +22,7 @@ export default function Donations() {
   const { isAdmin } = useAuth();
   const { user } = useAuth();
   const canRecord = user?.role === 'admin';
+  const canSeeDonor = user?.role !== 'admin';
   const canDonate = true; // all authenticated users can donate
   const [donations, setDonations] = useState([]);
   const [events, setEvents] = useState([]);
@@ -151,7 +152,7 @@ export default function Donations() {
           <table>
             <thead>
               <tr>
-                <th>Donor</th>
+                {canSeeDonor && <th>Donor</th>}
                 <th>Type</th>
                 <th>Amount / Qty</th>
                 <th>Description</th>
@@ -164,7 +165,7 @@ export default function Donations() {
             <tbody>
               {donations.map((d) => (
                 <tr key={d._id}>
-                  <td style={{ fontWeight: 600 }}>{d.donorName || 'Anonymous'}</td>
+                  {canSeeDonor && <td style={{ fontWeight: 600 }}>{d.donorName || 'Anonymous'}</td>}
                   <td><span className={`badge ${typeBadge(d.donationType)}`}>{d.donationType}</span></td>
                   <td>
                     {d.donationType === 'cash' ? `₱${(d.amount || 0).toLocaleString()}` : d.quantity || '—'}

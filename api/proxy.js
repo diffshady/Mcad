@@ -10,12 +10,16 @@ export default async function handler(req, res) {
   }
 
   const rawPath = req.query.path;
-  const pathSegments = Array.isArray(rawPath) ? rawPath : rawPath ? [rawPath] : [];
-  const pathPart = pathSegments.join('/');
+  const pathPart = Array.isArray(rawPath) ? rawPath.join('/') : (rawPath || '');
 
   const backendRoot = /\/api$/i.test(apiBaseUrl) ? apiBaseUrl : `${apiBaseUrl}/api`;
   const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
-  const targetUrl = `${backendRoot}/${pathPart}${query}`;
+  const cleanQuery = query
+    .replace(/^\?/, '')
+    .split('&')
+    .filter((part) => part && !part.startsWith('path='))
+    .join('&');
+  const targetUrl = `${backendRoot}/${pathPart}${cleanQuery ? `?${cleanQuery}` : ''}`;
 
   if (req.method === 'OPTIONS') {
     return res.status(204).end();

@@ -6,6 +6,9 @@ import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import AppIcon from '../components/AppIcon';
 
+const normalizeContactNumber = (value = '') => value.replace(/\D/g, '').slice(0, 11);
+const isValidContactNumber = (value = '') => value === '' || /^\d{11}$/.test(value);
+
 export default function Attendance() {
   const { canManage, isAdmin } = useAuth();
   const [records, setRecords] = useState([]);
@@ -42,14 +45,25 @@ export default function Attendance() {
 
   const openEdit = (rec) => {
     setEditing(rec._id);
-    setForm({ event: rec.event?._id || rec.event, attendees: [...rec.attendees] });
+    setForm({
+      event: rec.event?._id || rec.event,
+      attendees: (rec.attendees || []).map((att) => ({
+        ...att,
+        contactNumber: normalizeContactNumber(att.contactNumber || ''),
+      })),
+    });
     setNewAttendee({ name: '', barangay: '', contactNumber: '', present: true });
     setShowModal(true);
   };
 
   const addAttendee = () => {
     if (!newAttendee.name.trim()) return toast.error('Name is required');
-    setForm({ ...form, attendees: [...form.attendees, { ...newAttendee }] });
+    const contactNumber = normalizeContactNumber(newAttendee.contactNumber || '');
+    if (contactNumber && contactNumber.length !== 11) {
+      return toast.error('Contact number must be exactly 11 digits');
+    }
+
+    setForm({ ...form, attendees: [...form.attendees, { ...newAttendee, contactNumber }] });
     setNewAttendee({ name: '', barangay: '', contactNumber: '', present: true });
   };
 
@@ -66,13 +80,27 @@ export default function Attendance() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.event) return toast.error('Please select an event');
+
+    const payload = {
+      ...form,
+      attendees: (form.attendees || []).map((att) => ({
+        ...att,
+        contactNumber: normalizeContactNumber(att.contactNumber || ''),
+      })),
+    };
+
+    const invalidAttendee = payload.attendees.find((att) => !isValidContactNumber(att.contactNumber));
+    if (invalidAttendee) {
+      return toast.error(`Invalid contact number for ${invalidAttendee.name || 'an attendee'} (must be 11 digits)`);
+    }
+
     setSaving(true);
     try {
       if (editing) {
-        await api.put(`/attendance/${editing}`, form);
+        await api.put(`/attendance/${editing}`, payload);
         toast.success('Attendance updated');
       } else {
-        await api.post('/attendance', form);
+        await api.post('/attendance', payload);
         toast.success('Attendance recorded');
       }
       setShowModal(false);
@@ -187,7 +215,16 @@ export default function Attendance() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 10, marginTop: 10, alignItems: 'center' }}>
-                    <input className="form-input" placeholder="Contact Number" value={newAttendee.contactNumber} onChange={(e) => setNewAttendee({ ...newAttendee, contactNumber: e.target.value })} style={{ flex: 1 }} />
+                    <input
+                      className="form-input"
+                      placeholder="Contact Number (11 digits)"
+                      inputMode="numeric"
+                      maxLength={11}
+                      pattern="\\d{11}"
+                      value={newAttendee.contactNumber}
+                      onChange={(e) => setNewAttendee({ ...newAttendee, contactNumber: normalizeContactNumber(e.target.value) })}
+                      style={{ flex: 1 }}
+                    />
                     <label style={{ display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap', fontSize: '0.84rem' }}>
                       <input type="checkbox" checked={newAttendee.present} onChange={(e) => setNewAttendee({ ...newAttendee, present: e.target.checked })} />
                       Present

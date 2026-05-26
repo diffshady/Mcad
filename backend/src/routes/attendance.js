@@ -66,7 +66,7 @@ router.put('/:id', protect, authorize('admin', 'imam', 'leader'), async (req, re
     const record = await Attendance.findByIdAndUpdate(
       req.params.id,
       { ...req.body, totalAttendees },
-      { new: true }
+      { new: true, runValidators: true }
     );
     if (!record) return res.status(404).json({ message: 'Record not found' });
 

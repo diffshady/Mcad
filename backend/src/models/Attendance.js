@@ -7,7 +7,18 @@ const attendanceSchema = new mongoose.Schema(
       {
         name: { type: String, required: true },
         barangay: { type: String },
-        contactNumber: { type: String },
+        contactNumber: {
+          type: String,
+          trim: true,
+          set: (value) => {
+            if (value === undefined || value === null || value === '') return value;
+            return String(value).replace(/\D/g, '').slice(0, 11);
+          },
+          validate: {
+            validator: (value) => !value || /^\d{11}$/.test(value),
+            message: 'Contact number must be exactly 11 digits',
+          },
+        },
         present: { type: Boolean, default: true },
       },
     ],

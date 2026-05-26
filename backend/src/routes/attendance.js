@@ -11,7 +11,7 @@ router.get('/', protect, async (req, res) => {
     const filter = {};
     if (event) filter.event = event;
     const records = await Attendance.find(filter)
-      .populate('event', 'title startDate')
+      .populate('event', 'title startDate status')
       .populate('recordedBy', 'name')
       .sort({ createdAt: -1 });
     res.json(records);
@@ -24,7 +24,7 @@ router.get('/', protect, async (req, res) => {
 router.get('/:id', protect, async (req, res) => {
   try {
     const record = await Attendance.findById(req.params.id)
-      .populate('event', 'title startDate venue')
+      .populate('event', 'title startDate venue status')
       .populate('recordedBy', 'name');
     if (!record) return res.status(404).json({ message: 'Attendance record not found' });
     res.json(record);
@@ -61,6 +61,14 @@ router.post('/', protect, authorize('admin', 'barangay_admin', 'imam', 'leader')
 // PUT /api/attendance/:id
 router.put('/:id', protect, authorize('admin', 'barangay_admin', 'imam', 'leader'), async (req, res) => {
   try {
+    const existingRecord = await Attendance.findById(req.params.id).select('event');
+    if (!existingRecord) return res.status(404).json({ message: 'Record not found' });
+
+    const linkedEvent = await Event.findById(existingRecord.event).select('status');
+    if (linkedEvent?.status === 'completed' && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Only admin can edit attendance for completed events' });
+    }
+
     const { attendees } = req.body;
     const totalAttendees = attendees ? attendees.filter((a) => a.present).length : 0;
     const record = await Attendance.findByIdAndUpdate(
@@ -68,7 +76,6 @@ router.put('/:id', protect, authorize('admin', 'barangay_admin', 'imam', 'leader
       { ...req.body, totalAttendees },
       { new: true, runValidators: true }
     );
-    if (!record) return res.status(404).json({ message: 'Record not found' });
 
     await Event.findByIdAndUpdate(record.event, { attendanceCount: totalAttendees });
     res.json(record);

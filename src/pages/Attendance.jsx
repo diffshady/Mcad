@@ -169,7 +169,9 @@ export default function Attendance() {
                   {canManage && (
                     <td>
                       <div className="table-actions">
-                        <button className="btn btn-sm btn-outline" onClick={() => openEdit(rec)}>Edit</button>
+                        {(isAdmin || rec.event?.status !== 'completed') && (
+                          <button className="btn btn-sm btn-outline" onClick={() => openEdit(rec)}>Edit</button>
+                        )}
                         {isAdmin && <button className="btn btn-sm btn-danger" onClick={() => handleDelete(rec._id)}>Del</button>}
                       </div>
                     </td>

@@ -10,6 +10,7 @@ const STATUSES = ['active', 'pending', 'suspended'];
 const roleBadge = (r) => ({ admin: 'badge-red', barangay_admin: 'badge-red', imam: 'badge-blue', leader: 'badge-green', viewer: 'badge-gray' }[r] || 'badge-gray');
 const statusBadge = (s) => ({ active: 'badge-green', pending: 'badge-yellow', suspended: 'badge-red' }[s] || 'badge-gray');
 const roleLabel = (r) => ({ admin: 'Admin', barangay_admin: 'Barangay Admin', imam: 'Imam / Mosque Admin', leader: 'Community Leader', viewer: 'Community Viewer' }[r] || r);
+const initialsFromName = (name = '') => name.split(' ').filter(Boolean).map((part) => part[0]).slice(0, 2).join('').toUpperCase() || '?';
 
 export default function Users() {
   const [users, setUsers] = useState([]);
@@ -59,6 +60,23 @@ export default function Users() {
 
   const handleEditSave = async (e) => {
     e.preventDefault();
+    if (!editForm.name.trim()) {
+      toast.error('Name is required');
+      return;
+    }
+    if (/\d/.test(editForm.name)) {
+      toast.error('Name must not contain numbers');
+      return;
+    }
+    if (editForm.name.trim().split(/\s+/).filter(Boolean).length < 2) {
+      toast.error('Please enter first and last name');
+      return;
+    }
+    if (editForm.phone && !/^09\d{9}$/.test(editForm.phone)) {
+      toast.error('Phone number must be 11 digits and start with 09');
+      return;
+    }
+
     setSaving(true);
     try {
       const payload = { ...editForm };
@@ -133,7 +151,43 @@ export default function Users() {
             <tbody>
               {filtered.map((u) => (
                 <tr key={u._id}>
-                  <td style={{ fontWeight: 600 }}>{u.name}</td>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      {u.profilePhoto ? (
+                        <img
+                          src={u.profilePhoto}
+                          alt={u.name}
+                          style={{
+                            width: 34,
+                            height: 34,
+                            borderRadius: '50%',
+                            objectFit: 'cover',
+                            border: '1px solid var(--border)',
+                            flexShrink: 0,
+                          }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: 34,
+                            height: 34,
+                            borderRadius: '50%',
+                            background: 'var(--accent)',
+                            color: 'var(--primary-dark)',
+                            fontWeight: 700,
+                            fontSize: '0.74rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {initialsFromName(u.name)}
+                        </div>
+                      )}
+                      <span style={{ fontWeight: 600 }}>{u.name}</span>
+                    </div>
+                  </td>
                   <td style={{ color: 'var(--text-mid)' }}>{u.email}</td>
                   <td><span className={`badge ${roleBadge(u.role)}`}>{roleLabel(u.role)}</span></td>
                   <td>{u.barangay || '—'}</td>
@@ -175,7 +229,7 @@ export default function Users() {
                   <div className="form-group">
                     <label className="form-label">Full Name *</label>
                     <input className="form-input" required value={editForm.name}
-                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
+                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value.replace(/[0-9]/g, '') })} />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Email *</label>
@@ -201,7 +255,7 @@ export default function Users() {
                   <div className="form-group">
                     <label className="form-label">Phone</label>
                     <input className="form-input" value={editForm.phone}
-                      onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
+                      onChange={(e) => setEditForm({ ...editForm, phone: e.target.value.replace(/\D/g, '').slice(0, 11) })} />
                   </div>
                   <div className="form-group">
                     <label className="form-label">New Password <span style={{ fontWeight: 400, color: 'var(--text-light)' }}>(leave blank to keep current)</span></label>

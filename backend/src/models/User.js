@@ -14,6 +14,7 @@ const userSchema = new mongoose.Schema(
     status: { type: String, enum: ['active', 'suspended', 'pending'], default: 'pending' },
     barangay: { type: String, trim: true },
     phone: { type: String, trim: true },
+    profilePhoto: { type: String },
     resetPasswordToken: { type: String },
     resetPasswordExpire: { type: Date },
   },

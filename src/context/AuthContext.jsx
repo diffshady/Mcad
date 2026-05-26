@@ -55,6 +55,11 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  const updateUser = (nextUser) => {
+    setUser(nextUser);
+    localStorage.setItem('mcad_user', JSON.stringify(nextUser));
+  };
+
   const isAdmin = user?.role === 'admin';
   const isBarangayAdmin = user?.role === 'barangay_admin';
   const isImam = user?.role === 'imam';
@@ -63,7 +68,7 @@ export function AuthProvider({ children }) {
   const canManage = ['admin', 'barangay_admin', 'imam', 'leader'].includes(user?.role);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, isAdmin, isBarangayAdmin, isImam, isLeader, isViewer, canManage }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser, isAdmin, isBarangayAdmin, isImam, isLeader, isViewer, canManage }}>
       {children}
     </AuthContext.Provider>
   );

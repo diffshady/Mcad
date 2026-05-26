@@ -56,7 +56,16 @@ export default function Sidebar({ open, onClose }) {
 
         <div className="sidebar-footer">
           <NavLink to="/profile" className={({ isActive }) => `sidebar-user ${isActive ? 'active' : ''}`} onClick={onClose} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div className="sidebar-avatar">{initials}</div>
+            {user?.profilePhoto ? (
+              <img
+                src={user.profilePhoto}
+                alt="Profile"
+                className="sidebar-avatar sidebar-avatar-image"
+                style={{ objectFit: 'cover' }}
+              />
+            ) : (
+              <div className="sidebar-avatar">{initials}</div>
+            )}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div className="sidebar-user-name">{user?.name}</div>
               <div className="sidebar-user-role">

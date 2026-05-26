@@ -15,19 +15,32 @@ router.post(
   '/register',
   [
     body('name').trim().notEmpty().withMessage('Name is required')
-      .matches(/^[^0-9]+$/).withMessage('Name must not contain numbers'),
+      .matches(/^[^0-9]+$/).withMessage('Name must not contain numbers')
+      .custom((value) => {
+        const parts = value.trim().split(/\s+/).filter(Boolean);
+        if (parts.length < 2) {
+          throw new Error('Please enter first and last name');
+        }
+        return true;
+      }),
     body('email').isEmail({ require_tld: true }).normalizeEmail().withMessage('Please enter a valid email address (e.g. name@gmail.com)'),
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
     body('phone').optional({ checkFalsy: true })
       .matches(/^09\d{9}$/).withMessage('Phone number must be 11 digits and start with 09'),
     body('role').isIn(['admin', 'barangay_admin', 'imam', 'leader', 'viewer']).withMessage('Invalid role'),
+    body('portal').optional({ checkFalsy: true }).isIn(['admin', 'viewer']).withMessage('Invalid portal selection'),
   ],
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
     try {
-      const { name, email, password, role, barangay, phone } = req.body;
+      const { name, email, password, role, barangay, phone, portal } = req.body;
+
+      if (portal === 'viewer' && role !== 'viewer') {
+        return res.status(400).json({ message: 'Viewer Portal can only create Community Viewer accounts' });
+      }
+
       const existing = await User.findOne({ email });
       if (existing) return res.status(400).json({ message: 'Email already registered' });
 
@@ -90,6 +103,44 @@ router.post(
 // GET /api/auth/me
 router.get('/me', protect, async (req, res) => {
   res.json(req.user);
+});
+
+// PUT /api/auth/profile-photo — logged-in user updates own profile photo
+router.put('/profile-photo', protect, async (req, res) => {
+  try {
+    const { profilePhoto } = req.body;
+    if (typeof profilePhoto !== 'string' || !profilePhoto.startsWith('data:image/')) {
+      return res.status(400).json({ message: 'Invalid image format' });
+    }
+    if (profilePhoto.length > 4_500_000) {
+      return res.status(400).json({ message: 'Image is too large. Please use a smaller file.' });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { profilePhoto },
+      { new: true }
+    ).select('-password');
+
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// DELETE /api/auth/profile-photo — remove current profile photo
+router.delete('/profile-photo', protect, async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { $unset: { profilePhoto: 1 } },
+      { new: true }
+    ).select('-password');
+
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
 // PUT /api/auth/change-password — logged-in user changes own password

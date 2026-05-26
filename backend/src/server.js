@@ -21,7 +21,8 @@ app.use(cors({
   },
   credentials: true,
 }));
-app.use(express.json());
+app.use(express.json({ limit: '6mb' }));
+app.use(express.urlencoded({ extended: true, limit: '6mb' }));
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
@@ -34,6 +35,9 @@ app.use('/api/dashboard', require('./routes/dashboard'));
 
 // Global error handler
 app.use((err, req, res, next) => {
+  if (err?.type === 'entity.too.large') {
+    return res.status(413).json({ message: 'Uploaded image is too large.' });
+  }
   console.error(err.stack);
   res.status(500).json({ message: 'Internal server error' });
 });
@@ -72,7 +76,14 @@ const bootstrapAdminFromEnv = async () => {
 const startServer = async () => {
   await connectDB();
   await bootstrapAdminFromEnv();
-  app.listen(PORT, () => console.log(`MCAD server running on port ${PORT}`));
+  const server = app.listen(PORT, () => console.log(`MCAD server running on port ${PORT}`));
+  server.on('error', (err) => {
+    if (err?.code === 'EADDRINUSE') {
+      console.error(`Port ${PORT} is already in use. Stop the other server process or set a different PORT in your .env.`);
+      process.exit(1);
+    }
+    throw err;
+  });
 };
 
 startServer().catch((err) => {

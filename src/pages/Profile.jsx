@@ -9,11 +9,71 @@ const roleLabel = (r) => ({ admin: 'Admin', barangay_admin: 'Barangay Admin', im
 const roleBadge = (r) => ({ admin: 'badge-red', barangay_admin: 'badge-red', imam: 'badge-blue', leader: 'badge-green', viewer: 'badge-gray' }[r] || 'badge-gray');
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [form, setForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [saving, setSaving] = useState(false);
+  const [photoSaving, setPhotoSaving] = useState(false);
+  const [pendingPhoto, setPendingPhoto] = useState('');
+  const [photoInputKey, setPhotoInputKey] = useState(0);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handlePhotoSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please choose an image file');
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      toast.error('Image must be 3MB or smaller');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPendingPhoto(reader.result);
+      toast.success('Photo selected. Click Save Photo to apply.');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSavePhoto = async () => {
+    if (!pendingPhoto) return;
+    setPhotoSaving(true);
+    try {
+      const { data } = await api.put('/auth/profile-photo', { profilePhoto: pendingPhoto });
+      updateUser(data);
+      setPendingPhoto('');
+      setPhotoInputKey((k) => k + 1);
+      toast.success('Profile photo updated');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to upload photo');
+    } finally {
+      setPhotoSaving(false);
+    }
+  };
+
+  const handleCancelPendingPhoto = () => {
+    setPendingPhoto('');
+    setPhotoInputKey((k) => k + 1);
+  };
+
+  const handleRemovePhoto = async () => {
+    if (!window.confirm('Remove your profile photo?')) return;
+    setPhotoSaving(true);
+    try {
+      const { data } = await api.delete('/auth/profile-photo');
+      updateUser(data);
+      setPendingPhoto('');
+      setPhotoInputKey((k) => k + 1);
+      toast.success('Profile photo removed');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to remove photo');
+    } finally {
+      setPhotoSaving(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -55,19 +115,63 @@ export default function Profile() {
           <div className="card-title">Account Information</div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-            <div style={{
-              width: 64, height: 64, borderRadius: '50%',
-              background: 'var(--primary)', color: '#fff',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '1.6rem', fontWeight: 700, flexShrink: 0,
-            }}>
-              {user?.name?.charAt(0).toUpperCase()}
-            </div>
+            {(pendingPhoto || user?.profilePhoto) ? (
+              <img
+                src={pendingPhoto || user.profilePhoto}
+                alt="Profile"
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: '2px solid var(--border)',
+                  flexShrink: 0,
+                }}
+              />
+            ) : (
+              <div style={{
+                width: 64, height: 64, borderRadius: '50%',
+                background: 'var(--primary)', color: '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '1.6rem', fontWeight: 700, flexShrink: 0,
+              }}>
+                {user?.name?.charAt(0).toUpperCase()}
+              </div>
+            )}
             <div>
               <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{user?.name}</div>
               <div style={{ color: 'var(--text-mid)', fontSize: '0.85rem' }}>{user?.email}</div>
               <span className={`badge ${roleBadge(user?.role)}`} style={{ marginTop: 4 }}>{roleLabel(user?.role)}</span>
             </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
+            <label className="btn btn-outline btn-sm" style={{ position: 'relative', overflow: 'hidden' }}>
+              Choose Photo
+              <input
+                key={photoInputKey}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoSelect}
+                disabled={photoSaving}
+                style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }}
+              />
+            </label>
+            {pendingPhoto && (
+              <button type="button" className="btn btn-primary btn-sm" onClick={handleSavePhoto} disabled={photoSaving}>
+                {photoSaving ? 'Saving...' : 'Save Photo'}
+              </button>
+            )}
+            {pendingPhoto && (
+              <button type="button" className="btn btn-ghost btn-sm" onClick={handleCancelPendingPhoto} disabled={photoSaving}>
+                Cancel
+              </button>
+            )}
+            {!pendingPhoto && user?.profilePhoto && (
+              <button type="button" className="btn btn-ghost btn-sm" onClick={handleRemovePhoto} disabled={photoSaving}>
+                Remove Photo
+              </button>
+            )}
           </div>
 
           {[
@@ -85,7 +189,7 @@ export default function Profile() {
           ))}
 
           <div style={{ marginTop: 14, padding: '10px 14px', background: 'rgba(26,92,58,0.06)', borderRadius: 8, fontSize: '0.78rem', color: 'var(--text-mid)' }}>
-            <AppIcon name="info" size={14} className="inline-icon" /> To update your name, email, or barangay, contact the system administrator.
+            <AppIcon name="info" size={14} className="inline-icon" /> To update your name, email, or barangay, contact the system administrator. You can upload your own profile photo above.
           </div>
         </div>
 

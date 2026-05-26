@@ -50,11 +50,37 @@ router.put('/:id', protect, authorize('admin'), async (req, res) => {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    if (name !== undefined) user.name = name;
-    if (email !== undefined) user.email = email;
+    if (name !== undefined) {
+      const normalizedName = String(name).trim();
+      if (!normalizedName) return res.status(400).json({ message: 'Name is required' });
+      if (/\d/.test(normalizedName)) return res.status(400).json({ message: 'Name must not contain numbers' });
+      if (normalizedName.split(/\s+/).filter(Boolean).length < 2) {
+        return res.status(400).json({ message: 'Please enter first and last name' });
+      }
+      user.name = normalizedName;
+    }
+
+    if (email !== undefined) {
+      const normalizedEmail = String(email).trim().toLowerCase();
+      const existingEmail = await User.findOne({ email: normalizedEmail, _id: { $ne: req.params.id } });
+      if (existingEmail) return res.status(400).json({ message: 'Email already registered' });
+      user.email = normalizedEmail;
+    }
+
+    if (phone !== undefined) {
+      const normalizedPhone = String(phone).replace(/\D/g, '').slice(0, 11);
+      if (normalizedPhone && !/^09\d{9}$/.test(normalizedPhone)) {
+        return res.status(400).json({ message: 'Phone number must be 11 digits and start with 09' });
+      }
+      if (normalizedPhone) {
+        const existingPhone = await User.findOne({ phone: normalizedPhone, _id: { $ne: req.params.id } });
+        if (existingPhone) return res.status(400).json({ message: 'Phone number already registered' });
+      }
+      user.phone = normalizedPhone || undefined;
+    }
+
     if (role !== undefined) user.role = role;
     if (barangay !== undefined) user.barangay = barangay;
-    if (phone !== undefined) user.phone = phone;
     if (status !== undefined) user.status = status;
     if (password && password.trim().length >= 6) user.password = password;
 

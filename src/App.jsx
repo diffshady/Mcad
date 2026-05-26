@@ -25,7 +25,7 @@ export default function App() {
           position="top-right"
           toastOptions={{
             duration: 3500,
-            style: { fontFamily: 'Inter, sans-serif', fontSize: '0.88rem' },
+            style: { fontFamily: 'Manrope, Segoe UI, sans-serif', fontSize: '0.88rem' },
             success: { iconTheme: { primary: '#1a5c3a', secondary: '#fff' } },
           }}
         />

@@ -105,6 +105,7 @@ export default function Reports() {
             th { background: #1a5c3a; color: white; padding: 6px 10px; text-align: left; font-size: 11px; }
             td { padding: 6px 10px; border-bottom: 1px solid #ddd; font-size: 11px; }
             tr:nth-child(even) { background: #f5f5f5; }
+            .no-print { display: none !important; }
             .badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 10px; background: #eee; }
             .summary { display: flex; gap: 20px; margin: 14px 0; flex-wrap: wrap; }
             .sum-box { background: #f0faf4; border: 1px solid #1a5c3a; border-radius: 6px; padding: 10px 16px; }
@@ -147,7 +148,7 @@ export default function Reports() {
           </div>
           <div className="table-wrapper">
             <table>
-              <thead><tr><th>#</th><th>Event Title</th><th>Type</th><th>Date</th><th>Venue</th><th>Organizer</th><th>Status</th><th>Attendance</th><th>Actions</th></tr></thead>
+              <thead><tr><th>#</th><th>Event Title</th><th>Type</th><th>Date</th><th>Venue</th><th>Organizer</th><th>Status</th><th>Attendance</th><th className="no-print">Actions</th></tr></thead>
               <tbody>
                 {filteredEvents.map((ev, i) => (
                   <tr key={ev._id}>
@@ -159,7 +160,7 @@ export default function Reports() {
                     <td>{ev.organizer || '—'}</td>
                     <td><span className={`badge ${{ upcoming: 'badge-blue', ongoing: 'badge-green', completed: 'badge-gray', cancelled: 'badge-red' }[ev.status]}`}>{ev.status}</span></td>
                     <td>{ev.attendanceCount}</td>
-                    <td>
+                    <td className="no-print">
                       {canDeleteEvent(ev) ? (
                         <button className="btn btn-sm btn-danger" onClick={() => handleDeleteEvent(ev._id)}>
                           Delete
@@ -190,7 +191,7 @@ export default function Reports() {
           </div>
           <div className="table-wrapper">
             <table>
-              <thead><tr><th>#</th><th>Event</th><th>Event Date</th><th>Present</th><th>Total Listed</th><th>Recorded By</th><th>Record Date</th><th>Actions</th></tr></thead>
+              <thead><tr><th>#</th><th>Event</th><th>Event Date</th><th>Present</th><th>Total Listed</th><th>Recorded By</th><th>Record Date</th><th className="no-print">Actions</th></tr></thead>
               <tbody>
                 {filteredAttendance.map((rec, i) => (
                   <tr key={rec._id}>
@@ -201,7 +202,7 @@ export default function Reports() {
                     <td>{rec.attendees?.length}</td>
                     <td>{rec.recordedBy?.name || '—'}</td>
                     <td>{format(new Date(rec.createdAt), 'MMM d, yyyy')}</td>
-                    <td>
+                    <td className="no-print">
                       {isAdmin ? (
                         <button className="btn btn-sm btn-danger" onClick={() => handleDeleteAttendance(rec._id)}>
                           Delete
@@ -240,7 +241,7 @@ export default function Reports() {
           </div>
           <div className="table-wrapper">
             <table>
-              <thead><tr><th>#</th><th>Donor</th><th>Type</th><th>Amount / Qty</th><th>Description</th><th>Event</th><th>Date Received</th><th>Actions</th></tr></thead>
+              <thead><tr><th>#</th><th>Donor</th><th>Type</th><th>Amount / Qty</th><th>Description</th><th>Event</th><th>Date Received</th><th className="no-print">Actions</th></tr></thead>
               <tbody>
                 {filteredDonations.map((d, i) => (
                   <tr key={d._id}>
@@ -251,7 +252,7 @@ export default function Reports() {
                     <td>{d.description || '—'}</td>
                     <td>{d.event?.title || '—'}</td>
                     <td>{format(new Date(d.dateReceived), 'MMM d, yyyy')}</td>
-                    <td>
+                    <td className="no-print">
                       {isAdmin ? (
                         <button className="btn btn-sm btn-danger" onClick={() => handleDeleteDonation(d._id)}>
                           Delete

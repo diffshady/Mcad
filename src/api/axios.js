@@ -2,6 +2,15 @@ import axios from 'axios';
 
 const normalize = (value = '') => value.replace(/\/+$/, '');
 const withApiSuffix = (value = '') => (/\/api$/i.test(value) ? value : `${value}/api`);
+const isAuthRequest = (url = '') => {
+  const normalizedUrl = String(url).replace(/^\/+/, '');
+  return [
+    'auth/login',
+    'auth/register',
+    'auth/forgot-password',
+    'auth/reset-password',
+  ].some((path) => normalizedUrl.includes(path));
+};
 const isVercelHosted = () => {
   if (typeof window === 'undefined') return false;
   return window.location.hostname.endsWith('.vercel.app');
@@ -34,7 +43,7 @@ api.interceptors.response.use(
   (res) => res,
   (err) => {
     const url = err.config?.url || '';
-    const isAuthEndpoint = url.includes('/auth/login') || url.includes('/auth/register') || url.includes('/auth/forgot-password') || url.includes('/auth/reset-password');
+    const isAuthEndpoint = isAuthRequest(url);
     if (err.response?.status === 401 && !isAuthEndpoint) {
       localStorage.removeItem('mcad_token');
       localStorage.removeItem('mcad_user');

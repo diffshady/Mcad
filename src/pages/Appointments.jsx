@@ -117,7 +117,31 @@ export default function Appointments() {
   const [reviewForm, setReviewForm] = useState({ status: 'approved', notes: '', rejectionReason: '' });
   const [saving, setSaving] = useState(false);
   const [nextTicket, setNextTicket] = useState('');
-  const availableTimeOptions = TIME_OPTIONS[form.appointmentPeriod] || TIME_OPTIONS.AM;
+
+  const getBookedTimeValues = (appointmentDate, appointmentPeriod) => {
+    if (!appointmentDate) return new Set();
+
+    return new Set(
+      items
+        .filter((item) => item._id !== editing)
+        .filter((item) => !['cancelled', 'rejected'].includes(item.status))
+        .filter((item) => getLocalDateFieldValue(item.appointmentDate) === appointmentDate)
+        .map((item) => getTimeFieldValues(item.appointmentDate))
+        .filter((timeFields) => timeFields.appointmentPeriod === appointmentPeriod)
+        .map((timeFields) => timeFields.appointmentTime)
+    );
+  };
+
+  const getSelectableTimeOptions = (appointmentDate, appointmentPeriod) => {
+    const bookedTimes = getBookedTimeValues(appointmentDate, appointmentPeriod);
+
+    return (TIME_OPTIONS[appointmentPeriod] || TIME_OPTIONS.AM).map((option) => ({
+      ...option,
+      isBooked: bookedTimes.has(option.value),
+    }));
+  };
+
+  const availableTimeOptions = getSelectableTimeOptions(form.appointmentDate, form.appointmentPeriod);
 
   const fetchAppointments = async () => {
     setLoading(true);
@@ -174,13 +198,25 @@ export default function Appointments() {
     const { name, value } = e.target;
 
     if (name === 'appointmentPeriod') {
-      const nextOptions = TIME_OPTIONS[value] || [];
-      const currentTimeStillAllowed = nextOptions.some((option) => option.value === form.appointmentTime);
+      const nextOptions = getSelectableTimeOptions(form.appointmentDate, value);
+      const currentTimeStillAllowed = nextOptions.some((option) => option.value === form.appointmentTime && !option.isBooked);
 
       setForm((currentForm) => ({
         ...currentForm,
         appointmentPeriod: value,
-        appointmentTime: currentTimeStillAllowed ? currentForm.appointmentTime : (nextOptions[0]?.value || ''),
+        appointmentTime: currentTimeStillAllowed ? currentForm.appointmentTime : (nextOptions.find((option) => !option.isBooked)?.value || ''),
+      }));
+      return;
+    }
+
+    if (name === 'appointmentDate') {
+      const nextOptions = getSelectableTimeOptions(value, form.appointmentPeriod);
+      const currentTimeStillAllowed = nextOptions.some((option) => option.value === form.appointmentTime && !option.isBooked);
+
+      setForm((currentForm) => ({
+        ...currentForm,
+        appointmentDate: value,
+        appointmentTime: currentTimeStillAllowed ? currentForm.appointmentTime : (nextOptions.find((option) => !option.isBooked)?.value || ''),
       }));
       return;
     }
@@ -424,12 +460,21 @@ export default function Appointments() {
                     <label className="form-label">Appointment Time *</label>
                     <div className="form-row" style={{ gridTemplateColumns: '110px minmax(0, 1fr)', gap: 8 }}>
                       <select name="appointmentTime" className="form-select" value={form.appointmentTime} onChange={handleChange}>
-                        {availableTimeOptions.map((option) => <option key={`${form.appointmentPeriod}-${option.value}`} value={option.value}>{option.label}</option>)}
+                        {availableTimeOptions.map((option) => (
+                          <option key={`${form.appointmentPeriod}-${option.value}`} value={option.value} disabled={option.isBooked}>
+                            {option.isBooked ? `${option.label} (Booked)` : option.label}
+                          </option>
+                        ))}
                       </select>
                       <select name="appointmentPeriod" className="form-select" value={form.appointmentPeriod} onChange={handleChange}>
                         {PERIOD_OPTIONS.map((period) => <option key={period} value={period}>{period}</option>)}
                       </select>
                     </div>
+                    {form.appointmentDate && (
+                      <div style={{ marginTop: 6, fontSize: '0.75rem', color: 'var(--text-light)' }}>
+                        Booked times for the selected day are marked in the list.
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="form-row">
